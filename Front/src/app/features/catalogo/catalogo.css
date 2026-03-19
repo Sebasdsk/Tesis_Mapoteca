@@ -1,0 +1,28 @@
+/* Badges de disponibilidad */
+.badge-disponible {
+  background-color: color-mix(in srgb, var(--color-disponible) 15%, transparent);
+  color: var(--color-disponible);
+}
+
+.badge-digital {
+  background-color: color-mix(in srgb, var(--color-solo-digital) 15%, transparent);
+  color: var(--color-solo-digital);
+}
+
+.badge-no-disponible {
+  background-color: color-mix(in srgb, var(--color-prestada) 15%, transparent);
+  color: var(--color-prestada);
+}
+
+.badge-default {
+  background-color: color-mix(in srgb, var(--color-no-disponible) 15%, transparent);
+  color: var(--color-no-disponible);
+}
+
+/* Line clamp for card titles */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

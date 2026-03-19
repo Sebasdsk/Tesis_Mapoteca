@@ -1,0 +1,268 @@
+<!-- Loading -->
+@if (isLoading()) {
+  <div class="animate-pulse space-y-4">
+    <div class="h-6 bg-slate-200 rounded w-1/4"></div>
+    <div class="h-8 bg-slate-200 rounded w-2/3"></div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="h-20 bg-slate-200 rounded"></div>
+      <div class="h-20 bg-slate-200 rounded"></div>
+    </div>
+  </div>
+}
+
+<!-- Error -->
+@if (errorMessage() && !isLoading()) {
+  <div class="bg-white rounded-xl border border-slate-200 p-8 text-center">
+    <span class="material-symbols-outlined text-5xl text-slate-300 mb-3">error</span>
+    <p class="text-sm text-slate-500">{{ errorMessage() }}</p>
+    <a routerLink="/catalogo" class="inline-block mt-4 text-sm text-primary font-medium hover:underline">
+      ← Volver al catálogo
+    </a>
+  </div>
+}
+
+<!-- Content -->
+@if (carta() && !isLoading()) {
+  <div class="space-y-6">
+
+    <!-- Back + Title -->
+    <div>
+      <a routerLink="/catalogo" class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-primary mb-3">
+        <span class="material-symbols-outlined text-lg">arrow_back</span>
+        Volver al catálogo
+      </a>
+
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <p class="text-xs font-mono text-slate-400 mb-0.5">{{ carta()!.nomenclatura }}</p>
+          <h1 class="text-2xl font-bold text-slate-800">{{ carta()!.nombre }}</h1>
+        </div>
+
+        <span class="inline-flex items-center self-start px-3 py-1 rounded-full text-sm font-semibold"
+              [ngClass]="getDisponibilidadClass(carta()!.disponibilidad)">
+          {{ getDisponibilidadLabel(carta()!.disponibilidad) }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Datos Generales -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">info</span>
+          Datos Generales
+        </h2>
+
+        <dl class="space-y-3">
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-500">Escala</dt>
+            <dd class="text-sm font-medium text-slate-800">{{ carta()!.escala }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-500">Tipo</dt>
+            <dd class="text-sm font-medium text-slate-800">{{ getTipoLabel(carta()!.tipo_carta) }}</dd>
+          </div>
+          @if (carta()!.estado_republica) {
+            <div class="flex justify-between">
+              <dt class="text-sm text-slate-500">Estado</dt>
+              <dd class="text-sm font-medium text-slate-800">{{ carta()!.estado_republica }}</dd>
+            </div>
+          }
+          @if (carta()!.fecha_edicion) {
+            <div class="flex justify-between">
+              <dt class="text-sm text-slate-500">Fecha Edición</dt>
+              <dd class="text-sm font-medium text-slate-800">{{ carta()!.fecha_edicion }}</dd>
+            </div>
+          }
+        </dl>
+      </div>
+
+      <!-- Datos Técnicos -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">settings</span>
+          Datos Técnicos
+        </h2>
+
+        <dl class="space-y-3">
+          @if (carta()!.elipsoide) {
+            <div class="flex justify-between">
+              <dt class="text-sm text-slate-500">Elipsoide</dt>
+              <dd class="text-sm font-medium text-slate-800">{{ carta()!.elipsoide }}</dd>
+            </div>
+          }
+          @if (carta()!.zona_utm) {
+            <div class="flex justify-between">
+              <dt class="text-sm text-slate-500">Zona UTM</dt>
+              <dd class="text-sm font-medium text-slate-800">{{ carta()!.zona_utm }}</dd>
+            </div>
+          }
+          @if (carta()!.tipo_coordenadas) {
+            <div class="flex justify-between">
+              <dt class="text-sm text-slate-500">Coordenadas</dt>
+              <dd class="text-sm font-medium text-slate-800">{{ carta()!.tipo_coordenadas }}</dd>
+            </div>
+          }
+        </dl>
+      </div>
+    </div>
+
+    <!-- Límites Geográficos -->
+    @if (carta()!.limites_norte || carta()!.limites_sur || carta()!.limites_este || carta()!.limites_oeste) {
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">explore</span>
+          Límites Geográficos
+        </h2>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div class="bg-slate-50 rounded-lg p-3">
+            <p class="text-xs text-slate-500 mb-1">Norte</p>
+            <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_norte || '—' }}</p>
+          </div>
+          <div class="bg-slate-50 rounded-lg p-3">
+            <p class="text-xs text-slate-500 mb-1">Sur</p>
+            <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_sur || '—' }}</p>
+          </div>
+          <div class="bg-slate-50 rounded-lg p-3">
+            <p class="text-xs text-slate-500 mb-1">Este</p>
+            <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_este || '—' }}</p>
+          </div>
+          <div class="bg-slate-50 rounded-lg p-3">
+            <p class="text-xs text-slate-500 mb-1">Oeste</p>
+            <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_oeste || '—' }}</p>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- INEGI -->
+    @if (carta()!.url_inegi) {
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <h2 class="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">language</span>
+          Referencia INEGI
+        </h2>
+        <a
+          [href]="carta()!.url_inegi"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium"
+        >
+          <span class="material-symbols-outlined text-lg">open_in_new</span>
+          Ver en sitio del INEGI
+        </a>
+      </div>
+    }
+
+    <!-- Notas -->
+    @if (carta()!.notas) {
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <h2 class="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">notes</span>
+          Notas
+        </h2>
+        <p class="text-sm text-slate-600 whitespace-pre-line">{{ carta()!.notas }}</p>
+      </div>
+    }
+
+    <!-- Admin Actions -->
+    @if (authService.isAdmin()) {
+      <div class="flex flex-wrap gap-3">
+        <a [routerLink]="['/catalogo', carta()!.id, 'editar']"
+           class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg
+                  hover:bg-primary-light shadow-sm">
+          <span class="material-symbols-outlined text-lg">edit</span>
+          Editar
+        </a>
+        <button (click)="openBajaModal()"
+                class="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg
+                       hover:bg-amber-600 shadow-sm">
+          <span class="material-symbols-outlined text-lg">archive</span>
+          Dar de Baja
+        </button>
+        <button (click)="showDeleteConfirm.set(true)"
+                class="flex items-center gap-2 px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg
+                       hover:bg-red-600 shadow-sm">
+          <span class="material-symbols-outlined text-lg">delete</span>
+          Eliminar
+        </button>
+      </div>
+    }
+  </div>
+}
+
+<!-- ====== MODAL: Dar de Baja ====== -->
+@if (showBajaModal()) {
+  <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+       (click)="closeBajaModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h3 class="text-lg font-semibold text-slate-800">Dar de Baja</h3>
+        <button (click)="closeBajaModal()" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Motivo *</label>
+          <select [(ngModel)]="bajaMotivo"
+                  class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white
+                         focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+            <option value="PERDIDA">Pérdida</option>
+            <option value="DETERIORO_IRREPARABLE">Deterioro Irreparable</option>
+            <option value="OBSOLESCENCIA">Obsolescencia</option>
+            <option value="OTRO">Otro</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Descripción</label>
+          <textarea [(ngModel)]="bajaDescripcion" rows="3"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
+                    placeholder="Detalles adicionales..."></textarea>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
+        <button (click)="closeBajaModal()"
+                class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">
+          Cancelar
+        </button>
+        <button (click)="submitBaja()" [disabled]="bajaLoading()"
+                class="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg
+                       hover:bg-amber-600 disabled:opacity-50">
+          @if (bajaLoading()) {
+            <span class="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+          }
+          Confirmar Baja
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ====== MODAL: Confirmar Eliminar ====== -->
+@if (showDeleteConfirm()) {
+  <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+       (click)="showDeleteConfirm.set(false)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm py-6 px-6 text-center"
+         (click)="$event.stopPropagation()">
+      <span class="material-symbols-outlined text-4xl text-red-500 mb-3">delete_forever</span>
+      <h3 class="text-base font-semibold text-slate-800 mb-1">¿Eliminar permanentemente?</h3>
+      <p class="text-sm text-slate-500 mb-5">Esta acción no se puede deshacer. Se recomienda usar "Dar de Baja" en su lugar.</p>
+      <div class="flex items-center justify-center gap-3">
+        <button (click)="showDeleteConfirm.set(false)"
+                class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">
+          Cancelar
+        </button>
+        <button (click)="deleteCarta()"
+                class="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

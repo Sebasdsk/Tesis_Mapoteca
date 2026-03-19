@@ -1,0 +1,20 @@
+/* Badges de disponibilidad (reutilizados del catálogo) */
+.badge-disponible {
+  background-color: color-mix(in srgb, var(--color-disponible) 15%, transparent);
+  color: var(--color-disponible);
+}
+
+.badge-digital {
+  background-color: color-mix(in srgb, var(--color-solo-digital) 15%, transparent);
+  color: var(--color-solo-digital);
+}
+
+.badge-no-disponible {
+  background-color: color-mix(in srgb, var(--color-prestada) 15%, transparent);
+  color: var(--color-prestada);
+}
+
+.badge-default {
+  background-color: color-mix(in srgb, var(--color-no-disponible) 15%, transparent);
+  color: var(--color-no-disponible);
+}

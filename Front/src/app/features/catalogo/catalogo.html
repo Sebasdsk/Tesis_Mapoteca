@@ -1,0 +1,215 @@
+<div class="space-y-6">
+
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Catálogo de Cartas</h1>
+      <p class="text-sm text-slate-500 mt-0.5">Consulta y búsqueda del acervo cartográfico</p>
+    </div>
+    <a routerLink="/catalogo/nuevo"
+       class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium
+              hover:bg-primary-light shadow-md shadow-primary/20">
+      <span class="material-symbols-outlined text-lg">add</span>
+      Nueva Carta
+    </a>
+  </div>
+
+  <!-- Search + Filters Bar -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4">
+
+    <!-- Search -->
+    <div class="relative">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
+        search
+      </span>
+      <input
+        type="text"
+        [value]="searchTerm"
+        (input)="onSearchInput($event)"
+        placeholder="Buscar por nombre, nomenclatura o estado..."
+        class="w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900
+               placeholder:text-slate-400
+               focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+      />
+    </div>
+
+    <!-- Filter Row -->
+    <div class="flex flex-wrap gap-3 items-center">
+      <!-- Tipo Carta -->
+      <select
+        [(ngModel)]="tipoCartaFilter"
+        (ngModelChange)="onFilterChange()"
+        class="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white
+               focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+      >
+        <option value="">Todos los tipos</option>
+        @for (tipo of tiposCarta; track tipo.value) {
+          <option [value]="tipo.value">{{ tipo.label }}</option>
+        }
+      </select>
+
+      <!-- Disponibilidad -->
+      <select
+        [(ngModel)]="disponibilidadFilter"
+        (ngModelChange)="onFilterChange()"
+        class="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white
+               focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+      >
+        <option value="">Toda disponibilidad</option>
+        @for (disp of disponibilidades; track disp.value) {
+          <option [value]="disp.value">{{ disp.label }}</option>
+        }
+      </select>
+
+      <!-- Escala -->
+      <select
+        [(ngModel)]="escalaFilter"
+        (ngModelChange)="onFilterChange()"
+        class="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white
+               focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+      >
+        <option value="">Todas las escalas</option>
+        @for (esc of escalas; track esc.value) {
+          <option [value]="esc.value">{{ esc.label }}</option>
+        }
+      </select>
+
+      <!-- Clear Filters -->
+      @if (searchTerm || tipoCartaFilter || disponibilidadFilter || escalaFilter) {
+        <button
+          (click)="clearFilters()"
+          class="flex items-center gap-1 px-3 py-2 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+        >
+          <span class="material-symbols-outlined text-lg">close</span>
+          Limpiar filtros
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      @for (i of [1,2,3,4,5,6]; track i) {
+        <div class="bg-white rounded-xl border border-slate-200 p-5 animate-pulse">
+          <div class="h-4 bg-slate-200 rounded w-1/3 mb-3"></div>
+          <div class="h-5 bg-slate-200 rounded w-2/3 mb-4"></div>
+          <div class="flex gap-2">
+            <div class="h-6 bg-slate-200 rounded-full w-20"></div>
+            <div class="h-6 bg-slate-200 rounded-full w-16"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (errorMessage() && !isLoading()) {
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
+      <span class="material-symbols-outlined text-5xl text-slate-300 mb-3">cloud_off</span>
+      <h3 class="text-lg font-semibold text-slate-700 mb-1">Error de conexión</h3>
+      <p class="text-sm text-slate-500">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  <!-- Cards Grid -->
+  @if (!isLoading() && !errorMessage()) {
+    @if (cartas().length === 0) {
+      <!-- Empty State -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+        <span class="material-symbols-outlined text-6xl text-slate-300 mb-4">search_off</span>
+        <h3 class="text-lg font-semibold text-slate-700 mb-1">Sin resultados</h3>
+        <p class="text-sm text-slate-500">No se encontraron cartas con los filtros aplicados.</p>
+        @if (searchTerm || tipoCartaFilter || disponibilidadFilter || escalaFilter) {
+          <button
+            (click)="clearFilters()"
+            class="mt-4 px-4 py-2 text-sm text-primary hover:bg-primary/5 rounded-lg font-medium"
+          >
+            Limpiar filtros
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        @for (carta of cartas(); track carta.id) {
+          <a
+            [routerLink]="['/catalogo', carta.id]"
+            class="group bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md
+                   hover:border-primary/30 p-5 transition-all duration-200 cursor-pointer block"
+          >
+            <!-- Nomenclatura -->
+            <p class="text-xs font-mono text-slate-400 mb-1">{{ carta.nomenclatura }}</p>
+
+            <!-- Nombre -->
+            <h3 class="text-base font-semibold text-slate-800 mb-3 group-hover:text-primary line-clamp-2">
+              {{ carta.nombre }}
+            </h3>
+
+            <!-- Tags -->
+            <div class="flex flex-wrap gap-2 mb-3">
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
+                           bg-slate-100 text-slate-600">
+                <span class="material-symbols-outlined text-sm">straighten</span>
+                {{ carta.escala }}
+              </span>
+
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
+                           bg-slate-100 text-slate-600">
+                <span class="material-symbols-outlined text-sm">layers</span>
+                {{ getTipoLabel(carta.tipo_carta) }}
+              </span>
+            </div>
+
+            <!-- Bottom row: Estado + Disponibilidad -->
+            <div class="flex items-center justify-between">
+              @if (carta.estado_republica) {
+                <span class="text-xs text-slate-500 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">location_on</span>
+                  {{ carta.estado_republica }}
+                </span>
+              } @else {
+                <span></span>
+              }
+
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                    [ngClass]="getDisponibilidadClass(carta.disponibilidad)">
+                {{ getDisponibilidadLabel(carta.disponibilidad) }}
+              </span>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  }
+
+  <!-- Pagination -->
+  @if (!isLoading() && cartas().length > 0) {
+    <div class="flex items-center justify-between bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-3">
+      <button
+        (click)="prevPage()"
+        [disabled]="currentPage() === 0"
+        class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600
+               hover:bg-slate-100 rounded-lg
+               disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <span class="material-symbols-outlined text-lg">chevron_left</span>
+        Anterior
+      </button>
+
+      <span class="text-sm text-slate-500">
+        Página {{ currentPage() + 1 }}
+      </span>
+
+      <button
+        (click)="nextPage()"
+        [disabled]="!hasMore()"
+        class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-slate-600
+               hover:bg-slate-100 rounded-lg
+               disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Siguiente
+        <span class="material-symbols-outlined text-lg">chevron_right</span>
+      </button>
+    </div>
+  }
+</div>

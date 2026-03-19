@@ -1,0 +1,118 @@
+<div class="min-h-screen flex items-center justify-center bg-background-light p-4">
+
+  <!-- Login Card -->
+  <div class="w-full max-w-md">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+
+      <!-- Header Decorativo -->
+      <div class="relative bg-primary px-8 py-10 text-center overflow-hidden">
+        <!-- Overlay Pattern -->
+        <div class="login-map-overlay"></div>
+
+        <!-- Contenido del Header -->
+        <div class="relative z-10">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-white/15 backdrop-blur-sm rounded-2xl mb-4">
+            <span class="material-symbols-outlined text-white text-4xl">map</span>
+          </div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Mapoteca UAS</h1>
+          <p class="text-blue-200 text-sm mt-1">Dirección General de Bibliotecas</p>
+        </div>
+      </div>
+
+      <!-- Cuerpo del formulario -->
+      <div class="px-8 py-8">
+
+        <!-- Alert informativo -->
+        <div class="flex items-start gap-3 bg-primary/5 border-l-4 border-primary rounded-r-lg p-4 mb-6">
+          <span class="material-symbols-outlined text-primary text-xl mt-0.5">info</span>
+          <div>
+            <p class="text-sm text-slate-700 font-medium">Primer acceso</p>
+            <p class="text-xs text-slate-500 mt-0.5">Si es tu primera vez, usa las credenciales proporcionadas por el administrador.</p>
+          </div>
+        </div>
+
+        <!-- Formulario -->
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
+
+          <!-- Campo: Username -->
+          <div>
+            <label for="username" class="block text-sm font-medium text-slate-700 mb-1.5">
+              Número de Cuenta / Empleado
+            </label>
+            <div class="relative group">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl group-focus-within:text-primary">
+                person
+              </span>
+              <input
+                id="username"
+                type="text"
+                formControlName="username"
+                placeholder="Ej: 0123456-7"
+                class="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900
+                       placeholder:text-slate-400
+                       focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <!-- Campo: Password -->
+          <div>
+            <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">
+              Contraseña
+            </label>
+            <div class="relative group">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl group-focus-within:text-primary">
+                lock
+              </span>
+              <input
+                id="password"
+                type="password"
+                formControlName="password"
+                placeholder="Ingresa tu contraseña"
+                class="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg bg-white text-slate-900
+                       placeholder:text-slate-400
+                       focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          @if (errorMessage()) {
+            <div class="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3">
+              <span class="material-symbols-outlined text-red-500 text-xl">error</span>
+              <p class="text-sm">{{ errorMessage() }}</p>
+            </div>
+          }
+
+          <!-- Botón Login -->
+          <button
+            type="submit"
+            [disabled]="loginForm.invalid || isLoading()"
+            class="w-full py-3 px-6 bg-primary text-white font-bold rounded-lg
+                   shadow-lg shadow-primary/20
+                   hover:bg-primary-light
+                   focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2
+                   disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
+                   flex items-center justify-center gap-2"
+          >
+            @if (isLoading()) {
+              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Ingresando...</span>
+            } @else {
+              <span class="material-symbols-outlined text-xl">login</span>
+              <span>Iniciar Sesión</span>
+            }
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Footer Institucional -->
+    <p class="text-center text-xs text-slate-400 mt-6">
+      © 2026 Universidad Autónoma de Sinaloa — Dirección General de Bibliotecas
+    </p>
+  </div>
+</div>

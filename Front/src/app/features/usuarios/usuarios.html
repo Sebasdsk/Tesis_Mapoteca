@@ -1,0 +1,284 @@
+<div class="space-y-6">
+
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Gestión de Usuarios</h1>
+      <p class="text-sm text-slate-500 mt-0.5">Administración de cuentas del sistema</p>
+    </div>
+    <button
+      (click)="openCreateModal()"
+      class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium
+             hover:bg-primary-light shadow-md shadow-primary/20"
+    >
+      <span class="material-symbols-outlined text-lg">person_add</span>
+      Nuevo Usuario
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap gap-3">
+    <select
+      [(ngModel)]="tipoFilter"
+      (ngModelChange)="onFilterChange()"
+      class="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white
+             focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+    >
+      <option value="">Todos los tipos</option>
+      @for (t of tiposUsuario; track t.value) {
+        <option [value]="t.value">{{ t.label }}</option>
+      }
+    </select>
+
+    <select
+      [(ngModel)]="activoFilter"
+      (ngModelChange)="onFilterChange()"
+      class="px-3 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 bg-white
+             focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+    >
+      <option value="">Todos los estados</option>
+      <option value="true">Activos</option>
+      <option value="false">Inactivos</option>
+    </select>
+  </div>
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="bg-white rounded-xl border border-slate-200 p-6 animate-pulse space-y-3">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="h-12 bg-slate-100 rounded"></div>
+      }
+    </div>
+  }
+
+  <!-- Error -->
+  @if (errorMessage() && !isLoading()) {
+    <div class="bg-white rounded-xl border border-slate-200 p-8 text-center">
+      <span class="material-symbols-outlined text-5xl text-slate-300 mb-3">cloud_off</span>
+      <p class="text-sm text-slate-500">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  <!-- Users Table -->
+  @if (!isLoading() && !errorMessage()) {
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200">
+              <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Usuario</th>
+              <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Tipo</th>
+              <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3 hidden md:table-cell">ID</th>
+              <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3 hidden lg:table-cell">Email</th>
+              <th class="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Estado</th>
+              <th class="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (user of usuarios(); track user.id) {
+              <tr class="hover:bg-slate-50/50">
+                <td class="px-5 py-3">
+                  <p class="text-sm font-medium text-slate-800">{{ user.nombre_completo }}</p>
+                </td>
+                <td class="px-5 py-3">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                        [ngClass]="{'bg-blue-100 text-blue-700': user.tipo_usuario === 'ADMIN',
+                                    'bg-green-100 text-green-700': user.tipo_usuario === 'ESTUDIANTE',
+                                    'bg-purple-100 text-purple-700': user.tipo_usuario === 'MAESTRO',
+                                    'bg-orange-100 text-orange-700': user.tipo_usuario === 'EXTERNO'}">
+                    {{ getTipoLabel(user.tipo_usuario) }}
+                  </span>
+                </td>
+                <td class="px-5 py-3 hidden md:table-cell">
+                  <span class="text-sm text-slate-500 font-mono">{{ user.numero_identificacion || '—' }}</span>
+                </td>
+                <td class="px-5 py-3 hidden lg:table-cell">
+                  <span class="text-sm text-slate-500">{{ user.email || '—' }}</span>
+                </td>
+                <td class="px-5 py-3 text-center">
+                  @if (user.activo) {
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600">
+                      <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Activo
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1 text-xs font-medium text-slate-400">
+                      <span class="w-1.5 h-1.5 bg-slate-300 rounded-full"></span> Inactivo
+                    </span>
+                  }
+                </td>
+                <td class="px-5 py-3 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button (click)="openEditModal(user)" title="Editar"
+                            class="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg">
+                      <span class="material-symbols-outlined text-lg">edit</span>
+                    </button>
+                    <button (click)="resetPassword(user)" title="Resetear contraseña"
+                            class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg">
+                      <span class="material-symbols-outlined text-lg">key</span>
+                    </button>
+                    <button (click)="toggleActivo(user)" [title]="user.activo ? 'Desactivar' : 'Reactivar'"
+                            class="p-1.5 rounded-lg"
+                            [ngClass]="user.activo ? 'text-slate-400 hover:text-red-600 hover:bg-red-50' : 'text-slate-400 hover:text-green-600 hover:bg-green-50'">
+                      <span class="material-symbols-outlined text-lg">
+                        {{ user.activo ? 'person_off' : 'person_add' }}
+                      </span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (usuarios().length === 0) {
+        <div class="p-8 text-center">
+          <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">group_off</span>
+          <p class="text-sm text-slate-500">No se encontraron usuarios.</p>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- ====== MODAL: Crear/Editar Usuario ====== -->
+@if (showModal()) {
+  <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+       (click)="closeModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <h3 class="text-lg font-semibold text-slate-800">
+          {{ isEditing() ? 'Editar Usuario' : 'Nuevo Usuario' }}
+        </h3>
+        <button (click)="closeModal()" class="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="px-6 py-5 space-y-4">
+        @if (formError()) {
+          <div class="px-4 py-2 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
+            {{ formError() }}
+          </div>
+        }
+
+        <!-- Tipo usuario (solo crear) -->
+        @if (!isEditing()) {
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de Usuario</label>
+            <select [(ngModel)]="formData.tipo_usuario"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              @for (t of tiposUsuario; track t.value) {
+                <option [value]="t.value">{{ t.label }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <!-- Nombre -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
+          <input type="text" [(ngModel)]="formData.nombre_completo"
+                 class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                        focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                 placeholder="Nombre del usuario" />
+        </div>
+
+        <!--Num identificación (solo crear, no EXTERNO) -->
+        @if (!isEditing() && formData.tipo_usuario !== 'EXTERNO') {
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Número de Identificación</label>
+            <input type="text" [(ngModel)]="formData.numero_identificacion"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="Ej: 0123456-7" />
+          </div>
+        }
+
+        <!-- Institución (solo EXTERNO) -->
+        @if (formData.tipo_usuario === 'EXTERNO') {
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Institución</label>
+            <input type="text" [(ngModel)]="formData.institucion"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="Universidad, empresa, etc." />
+          </div>
+        }
+
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Email (opcional)</label>
+          <input type="email" [(ngModel)]="formData.email"
+                 class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                        focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                 placeholder="correo@ejemplo.com" />
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl">
+        <button (click)="closeModal()"
+                class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">
+          Cancelar
+        </button>
+        <button (click)="submitForm()" [disabled]="formLoading() || !formData.nombre_completo"
+                class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg
+                       hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed">
+          @if (formLoading()) {
+            <span class="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+          }
+          {{ isEditing() ? 'Guardar Cambios' : 'Crear Usuario' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ====== MODAL: Contraseña Temporal ====== -->
+@if (showPasswordModal()) {
+  <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center py-8 px-6">
+      <div class="w-14 h-14 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+        <span class="material-symbols-outlined text-green-600 text-3xl">check_circle</span>
+      </div>
+      <h3 class="text-lg font-semibold text-slate-800 mb-1">Contraseña Temporal</h3>
+      <p class="text-sm text-slate-500 mb-4">Para: {{ tempPasswordUser() }}</p>
+      <div class="bg-slate-100 rounded-lg px-4 py-3 mb-4">
+        <p class="text-xl font-mono font-bold text-primary tracking-wider">{{ tempPassword() }}</p>
+      </div>
+      <p class="text-xs text-amber-600 mb-5">
+        ⚠️ Anota esta contraseña. No se mostrará de nuevo.
+      </p>
+      <button (click)="closePasswordModal()"
+              class="px-6 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-light">
+        Entendido
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ====== MODAL: Confirmación ====== -->
+@if (showConfirmModal()) {
+  <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+       (click)="cancelConfirm()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm py-6 px-6 text-center"
+         (click)="$event.stopPropagation()">
+      <span class="material-symbols-outlined text-4xl text-amber-500 mb-3">warning</span>
+      <p class="text-sm text-slate-700 mb-5">{{ confirmMessage() }}</p>
+      <div class="flex items-center justify-center gap-3">
+        <button (click)="cancelConfirm()"
+                class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">
+          Cancelar
+        </button>
+        <button (click)="executeConfirm()"
+                class="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-light">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+}

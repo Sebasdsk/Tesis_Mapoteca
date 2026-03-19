@@ -1,0 +1,241 @@
+<div class="space-y-6">
+
+  <!-- Back + Title -->
+  <div>
+    <a routerLink="/catalogo" class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-primary mb-3">
+      <span class="material-symbols-outlined text-lg">arrow_back</span>
+      Volver al catálogo
+    </a>
+    <h1 class="text-2xl font-bold text-slate-800">
+      {{ isEditing() ? 'Editar Carta' : 'Registrar Nueva Carta' }}
+    </h1>
+    <p class="text-sm text-slate-500 mt-0.5">
+      {{ isEditing() ? 'Modifica los datos de la carta' : 'CU-03: Alta individual de carta cartográfica' }}
+    </p>
+  </div>
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="bg-white rounded-xl border border-slate-200 p-8 animate-pulse space-y-4">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="h-10 bg-slate-200 rounded"></div>
+      }
+    </div>
+  }
+
+  @if (!isLoading()) {
+    <!-- Error -->
+    @if (errorMessage()) {
+      <div class="px-4 py-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200 flex items-center gap-2">
+        <span class="material-symbols-outlined text-lg">error</span>
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form (ngSubmit)="submit()" class="space-y-6">
+
+      <!-- Datos de Identificación -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <h2 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">badge</span>
+          Datos de Identificación
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Nomenclatura (Clave INEGI) *</label>
+            <input type="text" [(ngModel)]="formData.nomenclatura" name="nomenclatura" required
+                   [disabled]="isEditing()"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono uppercase
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                          disabled:bg-slate-100 disabled:text-slate-500"
+                   placeholder="Ej: E13B26" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Nombre de la Carta *</label>
+            <input type="text" [(ngModel)]="formData.nombre" name="nombre" required
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="Ej: Culiacán" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Escala *</label>
+            <select [(ngModel)]="formData.escala" name="escala"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              @for (e of escalas; track e) {
+                <option [value]="e">{{ e }}</option>
+              }
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de Carta *</label>
+            <select [(ngModel)]="formData.tipo_carta" name="tipo_carta"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              @for (t of tiposCarta; track t.value) {
+                <option [value]="t.value">{{ t.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos Técnicos -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <h2 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">settings</span>
+          Datos Técnicos
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Elipsoide</label>
+            <input type="text" [(ngModel)]="formData.elipsoide" name="elipsoide"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="Ej: Clarke 1866" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Zona UTM</label>
+            <input type="text" [(ngModel)]="formData.zona_utm" name="zona_utm"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="Ej: 13N" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Tipo Coordenadas</label>
+            <select [(ngModel)]="formData.tipo_coordenadas" name="tipo_coordenadas"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              <option value="">Sin especificar</option>
+              @for (tc of tiposCoordenadas; track tc.value) {
+                <option [value]="tc.value">{{ tc.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Límites Geográficos -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <h2 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">explore</span>
+          Límites Geográficos
+        </h2>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Norte</label>
+            <input type="number" step="0.0001" [(ngModel)]="formData.limites_norte" name="limites_norte"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="24.8000" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Sur</label>
+            <input type="number" step="0.0001" [(ngModel)]="formData.limites_sur" name="limites_sur"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="24.6667" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Este</label>
+            <input type="number" step="0.0001" [(ngModel)]="formData.limites_este" name="limites_este"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="-107.0000" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Oeste</label>
+            <input type="number" step="0.0001" [(ngModel)]="formData.limites_oeste" name="limites_oeste"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="-107.2500" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Ubicación + Estado -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <h2 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">location_on</span>
+          Ubicación y Estado
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Estado de la República</label>
+            <input type="text" [(ngModel)]="formData.estado_republica" name="estado_republica"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                   placeholder="Ej: Sinaloa" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Disponibilidad</label>
+            <select [(ngModel)]="formData.disponibilidad" name="disponibilidad"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              @for (d of disponibilidades; track d.value) {
+                <option [value]="d.value">{{ d.label }}</option>
+              }
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Fecha Edición</label>
+            <input type="date" [(ngModel)]="formData.fecha_edicion" name="fecha_edicion"
+                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+          </div>
+        </div>
+      </div>
+
+      <!-- INEGI + Notas -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <h2 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">notes</span>
+          Referencias y Notas
+        </h2>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">URL INEGI</label>
+          <input type="url" [(ngModel)]="formData.url_inegi" name="url_inegi"
+                 class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                        focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                 placeholder="https://www.inegi.org.mx/..." />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Notas</label>
+          <textarea [(ngModel)]="formData.notas" name="notas" rows="3"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
+                    placeholder="Observaciones adicionales..."></textarea>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center justify-end gap-3">
+        <a routerLink="/catalogo"
+           class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">
+          Cancelar
+        </a>
+        <button type="submit"
+                [disabled]="isSaving() || !formData.nomenclatura || !formData.nombre"
+                class="flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-lg
+                       hover:bg-primary-light shadow-md shadow-primary/20
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+          @if (isSaving()) {
+            <span class="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+          } @else {
+            <span class="material-symbols-outlined text-lg">save</span>
+          }
+          {{ isEditing() ? 'Guardar Cambios' : 'Registrar Carta' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

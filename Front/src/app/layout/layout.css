@@ -1,0 +1,9 @@
+/* Active navigation link */
+:host ::ng-deep .nav-active {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+}
+
+:host ::ng-deep .nav-active .material-symbols-outlined {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}

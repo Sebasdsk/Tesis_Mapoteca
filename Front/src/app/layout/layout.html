@@ -1,0 +1,105 @@
+<!-- Mobile Sidebar Overlay -->
+@if (sidebarOpen()) {
+  <div
+    class="fixed inset-0 bg-black/40 z-40 lg:hidden"
+    (click)="closeSidebar()"
+  ></div>
+}
+
+<div class="flex h-screen overflow-hidden bg-background-light">
+
+  <!-- Sidebar -->
+  <aside
+    class="fixed lg:static inset-y-0 left-0 z-50
+           w-64 bg-primary-dark flex flex-col
+           transform transition-transform duration-300 ease-in-out
+           lg:translate-x-0"
+    [class.-translate-x-full]="!sidebarOpen()"
+    [class.translate-x-0]="sidebarOpen()"
+  >
+    <!-- Logo / Header -->
+    <div class="flex items-center gap-3 px-6 py-5 border-b border-white/10">
+      <div class="flex items-center justify-center w-10 h-10 bg-white/15 rounded-xl">
+        <span class="material-symbols-outlined text-white text-2xl">map</span>
+      </div>
+      <div>
+        <h1 class="text-white font-bold text-base leading-tight">Mapoteca</h1>
+        <p class="text-blue-300 text-xs">UAS · Bibliotecas</p>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      @for (item of navItems; track item.route) {
+        @if (!item.adminOnly || isAdmin()) {
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="nav-active"
+            (click)="closeSidebar()"
+            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
+                   text-blue-200 hover:bg-white/10 hover:text-white
+                   transition-colors duration-150"
+          >
+            <span class="material-symbols-outlined text-xl">{{ item.icon }}</span>
+            {{ item.label }}
+          </a>
+        }
+      }
+    </nav>
+
+    <!-- User Info (bottom) -->
+    <div class="px-4 py-4 border-t border-white/10">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-9 h-9 bg-white/15 rounded-full">
+          <span class="material-symbols-outlined text-white text-lg">person</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-white text-sm font-medium truncate">
+            {{ currentUser()?.nombre_completo }}
+          </p>
+          <p class="text-blue-300 text-xs truncate">
+            {{ currentUser()?.tipo_usuario }}
+          </p>
+        </div>
+        <button
+          (click)="logout()"
+          class="p-1.5 text-blue-300 hover:text-white hover:bg-white/10 rounded-lg"
+          title="Cerrar sesión"
+        >
+          <span class="material-symbols-outlined text-xl">logout</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- Top Header -->
+    <header class="flex items-center gap-4 px-6 py-3 bg-white border-b border-slate-200 shadow-sm">
+      <!-- Mobile hamburger -->
+      <button
+        (click)="toggleSidebar()"
+        class="lg:hidden p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+      >
+        <span class="material-symbols-outlined text-2xl">menu</span>
+      </button>
+
+      <!-- Breadcrumb / Title -->
+      <div class="flex-1">
+        <h2 class="text-lg font-semibold text-slate-800">Sistema de Gestión de Mapoteca</h2>
+      </div>
+
+      <!-- User badge (desktop) -->
+      <div class="hidden sm:flex items-center gap-2 text-sm text-slate-500">
+        <span class="material-symbols-outlined text-lg">person</span>
+        <span>{{ currentUser()?.nombre_completo }}</span>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <router-outlet />
+    </main>
+  </div>
+</div>
