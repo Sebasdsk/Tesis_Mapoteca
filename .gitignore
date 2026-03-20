@@ -1,0 +1,10 @@
+/Back/venv
+Back/.env
+/Back/app/db/__pycache__
+/Back/app/schemas/__pycache__
+/Back/app/api/v1/endpoints/__pycache__
+/Back/app/core/__pycache__
+/Back/app/api/v1/__pycache__
+/Back/app/__pycache__
+/Back/app/models/__pycache__
+/Back/alembic/__pycache__

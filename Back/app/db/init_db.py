@@ -10,6 +10,7 @@ from app.db.session import SessionLocal, engine
 from app.db.base import Base
 from app.models.usuario import Usuario, TipoUsuarioEnum
 from app.models.carta import Carta, TipoCartaEnum, DisponibilidadEnum, TipoCoordenadasEnum
+from app.models.prestamo import Prestamo  # noqa: F401 — needed for table creation
 from app.core.security import get_password_hash
 from app.core.config import settings
 from datetime import date
@@ -37,7 +38,7 @@ def init_db(db: Session) -> None:
             activo=True
         )
         db.add(admin)
-        print(f"✓ Admin user created: {settings.ADMIN_USERNAME}")
+        print(f"OK Admin user created: {settings.ADMIN_USERNAME}")
         print(f"  Email: {settings.ADMIN_EMAIL}")
         print(f"  Password: {settings.ADMIN_PASSWORD}")
         print("  ⚠️  CHANGE THIS PASSWORD IN PRODUCTION!")
@@ -86,7 +87,7 @@ def init_db(db: Session) -> None:
                 activo=True
             )
             db.add(user)
-            print(f"✓ Sample user created: {user_data['nombre_completo']} ({user_data['tipo_usuario']})")
+            print(f"OK Sample user created: {user_data['nombre_completo']} ({user_data['tipo_usuario']})")
     
     # Create sample cartas
     sample_cartas = [
@@ -221,7 +222,7 @@ def init_db(db: Session) -> None:
         if not existing:
             carta = Carta(**carta_data)
             db.add(carta)
-            print(f"✓ Sample carta created: {carta_data['nomenclatura']} - {carta_data['nombre']}")
+            print(f"OK Sample carta created: {carta_data['nomenclatura']} - {carta_data['nombre']}")
     
     # Commit all changes
     db.commit()
@@ -241,7 +242,7 @@ def main():
     # Create all tables
     print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
-    print("✓ Tables created successfully")
+    print("OK Tables created successfully")
     print()
     
     # Initialize data
