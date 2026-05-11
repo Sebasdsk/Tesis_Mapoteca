@@ -8,6 +8,8 @@ from uuid import UUID
 from app.core.dependencies import get_db, get_current_admin_user, get_current_user
 from app.models.usuario import Usuario
 from app.models.carta import Carta, TipoCartaEnum, DisponibilidadEnum
+from app.models.consulta import ConsultaCatalogo
+from app.models.prestamo import Prestamo, EstadoPrestamoEnum
 from app.schemas.carta import (
     CartaCreate,
     CartaRead,
@@ -102,6 +104,22 @@ def list_cartas(
     # Pagination
     cartas = query.offset(skip).limit(limit).all()
     
+    # Register search query (CU-07 Audit)
+    if search or tipo_carta or disponibilidad or estado_republica or escala:
+        filtros = {}
+        if tipo_carta: filtros["tipo_carta"] = str(tipo_carta)
+        if disponibilidad: filtros["disponibilidad"] = str(disponibilidad)
+        if estado_republica: filtros["estado_republica"] = estado_republica
+        if escala: filtros["escala"] = escala
+        
+        nueva_consulta = ConsultaCatalogo(
+            usuario_id=current_user.id,
+            termino_busqueda=search,
+            filtros=filtros
+        )
+        db.add(nueva_consulta)
+        db.commit()
+    
     return cartas
 
 
@@ -124,7 +142,13 @@ def get_carta(
             detail="Carta no encontrada"
         )
     
-    # TODO: Register consulta in consultas_catalogo table (CU-07 full implementation)
+    # Register consulta in consultas_catalogo table (CU-07 Audit)
+    nueva_consulta = ConsultaCatalogo(
+        usuario_id=current_user.id,
+        carta_id=carta.id
+    )
+    db.add(nueva_consulta)
+    db.commit()
     
     return carta
 
@@ -259,7 +283,23 @@ def delete_carta(
             detail="Carta no encontrada"
         )
     
-    # TODO: Verify no active prestamos before deleting
+    # Verify no active prestamos before deleting
+    prestamo_activo = db.query(Prestamo).filter(
+        Prestamo.carta_id == carta_id,
+        Prestamo.estado.in_([
+            EstadoPrestamoEnum.SOLICITADO,
+            EstadoPrestamoEnum.APROBADO,
+            EstadoPrestamoEnum.ENTREGADO,
+            EstadoPrestamoEnum.VENCIDO
+        ])
+    ).first()
+    
+    if prestamo_activo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede eliminar la carta porque tiene un préstamo activo o pendiente. "
+                   "Considére darla de baja en su lugar."
+        )
     
     nomenclatura = carta.nomenclatura
     nombre = carta.nombre

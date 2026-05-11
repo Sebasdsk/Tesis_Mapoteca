@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { CartaService } from '../../../core/service/carta';
+import { PrestamoService } from '../../../core/service/prestamo';
 import { AuthService } from '../../../core/service/auth';
 import { Carta } from '../../../core/models/carta';
 import { HttpClient } from '@angular/common/http';
@@ -19,6 +20,7 @@ export default class CartaDetalleComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cartaService = inject(CartaService);
+  private prestamoService = inject(PrestamoService);
   private http = inject(HttpClient);
   authService = inject(AuthService);
 
@@ -34,6 +36,13 @@ export default class CartaDetalleComponent implements OnInit {
 
   // Confirm delete
   showDeleteConfirm = signal(false);
+
+  // Solicitar préstamo
+  showPrestamoModal = signal(false);
+  prestamoNotas = '';
+  prestamoLoading = signal(false);
+  prestamoSuccess = signal('');
+  prestamoError = signal('');
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -99,6 +108,47 @@ export default class CartaDetalleComponent implements OnInit {
       EDAFOLOGICA: 'Edafológica', USO_SUELO: 'Uso de Suelo', CLIMATICA: 'Climática', OTRA: 'Otra',
     };
     return map[t] || t;
+  }
+
+  // --- Solicitar Préstamo ---
+
+  openPrestamoModal() {
+    this.prestamoNotas = '';
+    this.prestamoError.set('');
+    this.showPrestamoModal.set(true);
+  }
+
+  closePrestamoModal() {
+    this.showPrestamoModal.set(false);
+  }
+
+  submitPrestamo() {
+    const carta = this.carta();
+    if (!carta) return;
+    this.prestamoLoading.set(true);
+    this.prestamoError.set('');
+
+    this.prestamoService.solicitarPrestamo({
+      carta_id: carta.id,
+      notas_solicitud: this.prestamoNotas || undefined,
+    }).subscribe({
+      next: () => {
+        this.prestamoLoading.set(false);
+        this.showPrestamoModal.set(false);
+        this.prestamoSuccess.set('¡Solicitud enviada! El administrador revisará tu petición.');
+        setTimeout(() => this.prestamoSuccess.set(''), 5000);
+      },
+      error: (err) => {
+        this.prestamoLoading.set(false);
+        this.prestamoError.set(err.error?.detail || 'Error al solicitar préstamo');
+      },
+    });
+  }
+
+  canRequestLoan(): boolean {
+    const carta = this.carta();
+    if (!carta) return false;
+    return carta.disponibilidad === 'FISICA' || carta.disponibilidad === 'AMBAS';
   }
 
   private loadCarta(id: string) {

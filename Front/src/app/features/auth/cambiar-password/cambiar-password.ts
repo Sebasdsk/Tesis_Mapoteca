@@ -87,8 +87,12 @@ export default class CambiarPasswordComponent {
 
         // Redirigir después de 1.5 segundos
         setTimeout(() => {
-          // TODO: Cambiar a /catalogo o /admin/dashboard según rol
-          this.router.navigate(['/login']);
+          const user = this.authService.currentUser();
+          if (user?.tipo_usuario === 'ADMIN') {
+            this.router.navigate(['/usuarios']);
+          } else {
+            this.router.navigate(['/catalogo']);
+          }
         }, 1500);
       },
       error: (err: Error) => {

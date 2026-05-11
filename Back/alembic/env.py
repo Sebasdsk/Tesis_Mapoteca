@@ -8,8 +8,8 @@ from alembic import context
 import sys
 from pathlib import Path
 
-# Add the parent directory to the path
-sys.path.append(str(Path(__file__).resolve().parents[2]))
+# Add the parent directory (Back folder) to the path
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 # Import app configuration
 from app.core.config import settings
@@ -18,6 +18,8 @@ from app.db.base import Base
 # Import all models to ensure they're registered with Base
 from app.models.usuario import Usuario
 from app.models.carta import Carta
+from app.models.prestamo import Prestamo
+from app.models.consulta import ConsultaCatalogo
 
 # Alembic Config object
 config = context.config

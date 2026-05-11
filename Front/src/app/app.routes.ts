@@ -46,10 +46,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/usuarios/usuarios'),
       },
 
-      // Placeholders
+      // Préstamos
       {
         path: 'prestamos',
-        loadComponent: () => import('./features/catalogo/catalogo'), // placeholder
+        loadComponent: () => import('./features/prestamos/prestamos'),
       },
       {
         path: 'reportes',

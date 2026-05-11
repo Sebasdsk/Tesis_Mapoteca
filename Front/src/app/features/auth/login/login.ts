@@ -39,8 +39,12 @@ export default class LoginComponent {
         if (response.user.debe_cambiar_password) {
           this.router.navigate(['/cambiar-password']);
         } else {
-          // TODO: Cambiar a /catalogo o /admin/dashboard según rol
-          this.router.navigate(['/login']); // Temporal hasta que existan las rutas
+          // Redirigir según rol
+          if (response.user.tipo_usuario === 'ADMIN') {
+            this.router.navigate(['/usuarios']);
+          } else {
+            this.router.navigate(['/catalogo']);
+          }
         }
       },
       error: (err: Error) => {
