@@ -28,7 +28,7 @@ export default class LayoutComponent {
     { icon: 'auto_stories', label: 'Catálogo', route: '/catalogo', adminOnly: false },
     { icon: 'swap_horiz', label: 'Préstamos', route: '/prestamos', adminOnly: false },
     { icon: 'group', label: 'Usuarios', route: '/usuarios', adminOnly: true },
-    { icon: 'bar_chart', label: 'Reportes', route: '/reportes', adminOnly: true, disabled: true },
+    { icon: 'bar_chart', label: 'Reportes', route: '/reportes', adminOnly: true },
   ];
 
   toggleSidebar() {

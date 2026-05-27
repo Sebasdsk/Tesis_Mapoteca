@@ -1,0 +1,265 @@
+<div class="h-full flex flex-col bg-slate-50 min-h-full p-4 lg:p-8">
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Reportes y Estadisticas</h1>
+      <p class="text-sm text-slate-500 mt-1">Vista general del rendimiento y uso de la mapoteca.</p>
+    </div>
+    <button (click)="loadData()" 
+            class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 shadow-sm transition-colors w-fit">
+      <span class="material-symbols-outlined text-lg" [class.animate-spin]="isLoading()">refresh</span>
+      Actualizar
+    </button>
+  </header>
+
+  @if (isLoading()) {
+    <div class="flex-1 flex flex-col items-center justify-center text-slate-400 space-y-4">
+      <span class="material-symbols-outlined text-4xl animate-spin text-primary">progress_activity</span>
+      <p>Generando reportes...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="flex flex-col items-center justify-center py-12 px-4 text-center bg-white rounded-xl border border-red-100 shadow-sm">
+      <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
+        <span class="material-symbols-outlined text-red-600 text-2xl">error</span>
+      </div>
+      <h3 class="text-lg font-semibold text-slate-800 mb-1">Error al cargar datos</h3>
+      <p class="text-sm text-slate-500 mb-4">{{ errorMessage() }}</p>
+      <button (click)="loadData()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-sm font-medium transition-colors">
+        Reintentar
+      </button>
+    </div>
+  } @else {
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-blue-600 text-2xl">map</span>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Cartas en Catalogo</p>
+            <p class="text-2xl font-bold text-slate-800">{{ resumen()?.total_cartas || 0 }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-emerald-600 text-2xl">group</span>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Usuarios Registrados</p>
+            <p class="text-2xl font-bold text-slate-800">{{ resumen()?.total_usuarios || 0 }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-amber-600 text-2xl">swap_horiz</span>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Prestamos Activos</p>
+            <p class="text-2xl font-bold text-slate-800">{{ resumen()?.prestamos_activos || 0 }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-purple-600 text-2xl">search</span>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-slate-500">Consultas Totales</p>
+            <p class="text-2xl font-bold text-slate-800">{{ resumen()?.consultas_totales || 0 }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <!-- Bar Chart: Top Prestadas -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
+          <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-lg">bar_chart</span>
+            Top Cartas Prestadas
+          </h2>
+        </div>
+        <div class="p-4 flex-1" style="min-height: 260px">
+          <canvas #barChart></canvas>
+        </div>
+      </div>
+
+      <!-- Donut Chart: Distribucion Usuarios -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
+          <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-500 text-lg">donut_large</span>
+            Distribucion por Tipo de Usuario
+          </h2>
+        </div>
+        <div class="p-4 flex-1 flex items-center justify-center" style="min-height: 260px">
+          @if (distribucion().length > 0) {
+            <canvas #donutChart></canvas>
+          } @else {
+            <p class="text-sm text-slate-400">Sin datos suficientes</p>
+          }
+        </div>
+      </div>
+
+      <!-- Line Chart: Actividad Mensual -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
+          <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+            <span class="material-symbols-outlined text-emerald-500 text-lg">show_chart</span>
+            Actividad Mensual
+          </h2>
+        </div>
+        <div class="p-4 flex-1" style="min-height: 260px">
+          @if (actividad().length > 0) {
+            <canvas #lineChart></canvas>
+          } @else {
+            <p class="text-sm text-slate-400 text-center py-8">Sin datos de actividad registrados</p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Tables Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Top Buscadas -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
+          <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-lg">trending_up</span>
+            Cartas Mas Buscadas
+          </h2>
+        </div>
+        <div class="p-0 overflow-x-auto flex-1">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500">
+              <tr>
+                <th class="px-5 py-3 border-b border-slate-200">Nomenclatura</th>
+                <th class="px-5 py-3 border-b border-slate-200">Nombre</th>
+                <th class="px-5 py-3 border-b border-slate-200 text-right">Consultas</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (carta of masBuscadas(); track carta.carta_id) {
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="px-5 py-3 font-mono text-slate-800">{{ carta.nomenclatura }}</td>
+                  <td class="px-5 py-3 font-medium">{{ carta.nombre }}</td>
+                  <td class="px-5 py-3 text-right font-bold text-primary">{{ carta.cantidad }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3" class="px-5 py-8 text-center text-slate-500">
+                    No hay suficientes datos registrados.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Top Prestadas (table) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50">
+          <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-500 text-lg">star</span>
+            Cartas Mas Prestadas
+          </h2>
+        </div>
+        <div class="p-0 overflow-x-auto flex-1">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500">
+              <tr>
+                <th class="px-5 py-3 border-b border-slate-200">Nomenclatura</th>
+                <th class="px-5 py-3 border-b border-slate-200">Nombre</th>
+                <th class="px-5 py-3 border-b border-slate-200 text-right">Prestamos</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (carta of masPrestadas(); track carta.carta_id) {
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="px-5 py-3 font-mono text-slate-800">{{ carta.nomenclatura }}</td>
+                  <td class="px-5 py-3 font-medium">{{ carta.nombre }}</td>
+                  <td class="px-5 py-3 text-right font-bold text-amber-600">{{ carta.cantidad }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3" class="px-5 py-8 text-center text-slate-500">
+                    No hay suficientes datos registrados.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prestamos Vencidos -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+      <div class="px-5 py-4 border-b border-slate-200 bg-red-50 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-red-800 flex items-center gap-2">
+          <span class="material-symbols-outlined text-red-600 text-lg">warning</span>
+          Prestamos Vencidos (Atencion Requerida)
+        </h2>
+        <span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-1 rounded-full">
+          {{ vencidos().length }}
+        </span>
+      </div>
+      <div class="p-0 overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600 min-w-[600px]">
+          <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500">
+            <tr>
+              <th class="px-5 py-3 border-b border-slate-200">Usuario</th>
+              <th class="px-5 py-3 border-b border-slate-200">Carta</th>
+              <th class="px-5 py-3 border-b border-slate-200">Fecha Limite</th>
+              <th class="px-5 py-3 border-b border-slate-200 text-right">Dias Retraso</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (p of vencidos(); track p.prestamo_id) {
+              <tr class="hover:bg-red-50/50 transition-colors">
+                <td class="px-5 py-4">
+                  <p class="font-medium text-slate-800">{{ p.usuario_nombre }}</p>
+                  <p class="text-xs text-slate-500">{{ p.usuario_email }}</p>
+                </td>
+                <td class="px-5 py-4">
+                  <p class="font-medium text-slate-800">{{ p.carta_nombre }}</p>
+                  <p class="text-xs font-mono text-slate-500">{{ p.carta_nomenclatura }}</p>
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap text-red-600 font-medium">
+                  {{ p.fecha_limite | date:'dd MMM yyyy' }}
+                </td>
+                <td class="px-5 py-4 text-right">
+                  <span class="inline-flex items-center gap-1 text-red-700 font-bold bg-red-100 px-2.5 py-1 rounded-md text-xs">
+                    <span class="material-symbols-outlined text-[14px]">timer</span>
+                    {{ p.dias_retraso }} dias
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="px-5 py-12 text-center">
+                  <div class="flex flex-col items-center justify-center text-slate-400">
+                    <span class="material-symbols-outlined text-4xl mb-3 text-emerald-500">check_circle</span>
+                    <p class="text-slate-600 font-medium">Todo en orden!</p>
+                    <p class="text-sm">No hay prestamos vencidos en este momento.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  }
+</div>

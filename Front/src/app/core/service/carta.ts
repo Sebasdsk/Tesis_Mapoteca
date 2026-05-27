@@ -63,4 +63,13 @@ export class CartaService {
   deleteCarta(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  /**
+   * POST /cartas/carga-masiva — Carga masiva CSV (admin)
+   */
+  cargaMasiva(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>(`${this.apiUrl}/carga-masiva`, formData);
+  }
 }

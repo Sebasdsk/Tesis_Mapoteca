@@ -1,7 +1,9 @@
 """
 Carta management endpoints - CU-03: Registrar Carta Individual
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+import csv
+import io
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
@@ -15,7 +17,9 @@ from app.schemas.carta import (
     CartaRead,
     CartaUpdate,
     CartaSimple,
-    CartaBaja
+    CartaBaja,
+    CargaMasivaResult,
+    CargaMasivaResultRow
 )
 
 
@@ -350,3 +354,159 @@ def get_cartas_summary(
         "danadas": danadas,
         "porcentaje_disponible": round((disponibles / total * 100) if total > 0 else 0, 2)
     }
+
+# CU-04: Carga Masiva de Cartas
+@router.post("/carga-masiva", response_model=CargaMasivaResult)
+async def carga_masiva_cartas(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_admin: Usuario = Depends(get_current_admin_user),
+):
+    """
+    CU-04: Importacion masiva de cartas desde archivo CSV.
+    Columnas esperadas: nomenclatura,nombre,escala,tipo_carta,estado_republica,zona_utm,elipsoide,disponibilidad,notas
+    """
+    if not file.filename or not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="El archivo debe ser un CSV (.csv)")
+    
+    try:
+        content = await file.read()
+        decoded = content.decode('utf-8-sig')  # utf-8-sig handles BOM from Excel
+    except UnicodeDecodeError:
+        try:
+            decoded = content.decode('latin-1')
+        except Exception:
+            raise HTTPException(status_code=400, detail="No se pudo decodificar el archivo. Use codificacion UTF-8.")
+    
+    reader = csv.DictReader(io.StringIO(decoded))
+    
+    # Validate required headers
+    required_headers = {'nomenclatura', 'nombre', 'escala', 'tipo_carta'}
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="El archivo CSV esta vacio o no tiene encabezados")
+    
+    actual_headers = {h.strip().lower() for h in reader.fieldnames}
+    missing = required_headers - actual_headers
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Faltan columnas obligatorias: {', '.join(missing)}. Columnas encontradas: {', '.join(reader.fieldnames)}"
+        )
+    
+    resultados = []
+    exitosas = 0
+    errores_count = 0
+    
+    # Map of valid tipo_carta values
+    tipos_validos = {e.value: e for e in TipoCartaEnum}
+    disponibilidad_validos = {e.value: e for e in DisponibilidadEnum}
+    
+    for i, row in enumerate(reader, start=2):  # start=2 because row 1 is headers
+        # Normalize keys
+        row = {k.strip().lower(): v.strip() if v else '' for k, v in row.items()}
+        
+        nomenclatura = row.get('nomenclatura', '').upper().strip()
+        nombre = row.get('nombre', '').strip()
+        escala = row.get('escala', '').strip()
+        tipo_carta_str = row.get('tipo_carta', '').upper().strip()
+        
+        # Validations
+        if not nomenclatura:
+            errores_count += 1
+            resultados.append(CargaMasivaResultRow(
+                fila=i, nomenclatura='', nombre=nombre, exito=False,
+                mensaje='Nomenclatura es obligatoria'
+            ))
+            continue
+        
+        if not nombre:
+            errores_count += 1
+            resultados.append(CargaMasivaResultRow(
+                fila=i, nomenclatura=nomenclatura, nombre='', exito=False,
+                mensaje='Nombre es obligatorio'
+            ))
+            continue
+        
+        if not escala:
+            errores_count += 1
+            resultados.append(CargaMasivaResultRow(
+                fila=i, nomenclatura=nomenclatura, nombre=nombre, exito=False,
+                mensaje='Escala es obligatoria'
+            ))
+            continue
+        
+        if tipo_carta_str not in tipos_validos:
+            errores_count += 1
+            resultados.append(CargaMasivaResultRow(
+                fila=i, nomenclatura=nomenclatura, nombre=nombre, exito=False,
+                mensaje=f'Tipo de carta invalido: {tipo_carta_str}. Validos: {", ".join(tipos_validos.keys())}'
+            ))
+            continue
+        
+        # Check duplicate in DB
+        existing = db.query(Carta).filter(Carta.nomenclatura == nomenclatura).first()
+        if existing:
+            errores_count += 1
+            resultados.append(CargaMasivaResultRow(
+                fila=i, nomenclatura=nomenclatura, nombre=nombre, exito=False,
+                mensaje=f'Ya existe una carta con nomenclatura {nomenclatura}'
+            ))
+            continue
+        
+        # Check duplicate within this CSV batch
+        nomenclaturas_procesadas = [r.nomenclatura for r in resultados if r.exito]
+        if nomenclatura in nomenclaturas_procesadas:
+            errores_count += 1
+            resultados.append(CargaMasivaResultRow(
+                fila=i, nomenclatura=nomenclatura, nombre=nombre, exito=False,
+                mensaje=f'Nomenclatura duplicada en el archivo CSV'
+            ))
+            continue
+        
+        # Parse optional fields
+        disponibilidad_str = row.get('disponibilidad', 'FISICA').upper().strip()
+        disponibilidad = disponibilidad_validos.get(disponibilidad_str, DisponibilidadEnum.FISICA)
+        
+        try:
+            carta = Carta(
+                nomenclatura=nomenclatura,
+                nombre=nombre,
+                escala=escala,
+                tipo_carta=tipos_validos[tipo_carta_str],
+                estado_republica=row.get('estado_republica', '') or None,
+                zona_utm=row.get('zona_utm', '') or None,
+                elipsoide=row.get('elipsoide', '') or None,
+                disponibilidad=disponibilidad,
+                notas=row.get('notas', '') or None,
+            )
+            db.add(carta)
+            db.flush()  # flush to catch DB errors before commit
+            
+            exitosas += 1
+            resultados.append(CargaMasivaResultRow(
+                fila=i, nomenclatura=nomenclatura, nombre=nombre, exito=True,
+                mensaje='Carta registrada exitosamente'
+            ))
+        except Exception as e:
+            db.rollback()
+            errores_count += 1
+            resultados.append(CargaMasivaResultRow(
+                fila=i, nomenclatura=nomenclatura, nombre=nombre, exito=False,
+                mensaje=f'Error al guardar: {str(e)}'
+            ))
+    
+    # Commit all successful inserts
+    if exitosas > 0:
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Error al guardar en la base de datos: {str(e)}")
+    
+    return CargaMasivaResult(
+        total_procesadas=len(resultados),
+        exitosas=exitosas,
+        errores=errores_count,
+        detalle=resultados
+    )
+

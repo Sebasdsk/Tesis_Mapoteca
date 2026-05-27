@@ -30,6 +30,11 @@ export const routes: Routes = [
           import('./features/catalogo/carta-form/carta-form'),
       },
       {
+        path: 'catalogo/carga-masiva',
+        loadComponent: () =>
+          import('./features/catalogo/carga-masiva/carga-masiva'),
+      },
+      {
         path: 'catalogo/:id',
         loadComponent: () =>
           import('./features/catalogo/carta-detalle/carta-detalle'),
@@ -53,7 +58,7 @@ export const routes: Routes = [
       },
       {
         path: 'reportes',
-        loadComponent: () => import('./features/catalogo/catalogo'), // placeholder
+        loadComponent: () => import('./features/reportes/reportes'),
       },
 
       // Redirect vacío → catálogo

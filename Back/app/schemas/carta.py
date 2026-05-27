@@ -111,3 +111,21 @@ class CartaBaja(BaseModel):
         if v.upper() not in allowed:
             raise ValueError(f'Motivo debe ser uno de: {", ".join(allowed)}')
         return v.upper()
+
+
+# Schemas para carga masiva (CU-04)
+class CargaMasivaResultRow(BaseModel):
+    """Resultado de una fila procesada en la carga masiva"""
+    fila: int
+    nomenclatura: str
+    nombre: str
+    exito: bool
+    mensaje: str
+
+class CargaMasivaResult(BaseModel):
+    """Resultado general de la carga masiva"""
+    total_procesadas: int
+    exitosas: int
+    errores: int
+    detalle: list[CargaMasivaResultRow]
+

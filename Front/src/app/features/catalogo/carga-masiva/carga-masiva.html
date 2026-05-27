@@ -1,0 +1,183 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 text-sm text-slate-500 mb-2">
+        <a routerLink="/catalogo" class="hover:text-primary transition-colors">Catalogo</a>
+        <span class="material-symbols-outlined text-base">chevron_right</span>
+        <span class="text-slate-700 font-medium">Carga Masiva</span>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-800">Carga Masiva de Cartas</h1>
+      <p class="text-sm text-slate-500 mt-0.5">Importa multiples cartas desde un archivo CSV</p>
+    </div>
+    <button (click)="downloadTemplate()"
+            class="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium
+                   hover:bg-slate-50 shadow-sm transition-colors w-fit">
+      <span class="material-symbols-outlined text-lg">download</span>
+      Descargar Plantilla CSV
+    </button>
+  </div>
+
+  <!-- Info Card -->
+  <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
+    <span class="material-symbols-outlined text-blue-600 text-xl flex-shrink-0 mt-0.5">info</span>
+    <div class="text-sm text-blue-800">
+      <p class="font-semibold mb-1">Formato del archivo CSV</p>
+      <p class="text-blue-700">Columnas obligatorias: <strong>nomenclatura, nombre, escala, tipo_carta</strong></p>
+      <p class="text-blue-700 mt-1">Columnas opcionales: estado_republica, zona_utm, elipsoide, disponibilidad, notas</p>
+      <p class="text-blue-600 mt-1">Tipos validos: TOPOGRAFICA, GEOLOGICA, HIDROLOGICA, EDAFOLOGICA, USO_SUELO, CLIMATICA, OTRA</p>
+    </div>
+  </div>
+
+  <!-- Drop Zone -->
+  @if (!result()) {
+    <div
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      [ngClass]="{'border-primary bg-primary/5': isDragging(), 'border-slate-300 bg-white': !isDragging()}"
+      class="border-2 border-dashed rounded-xl p-10 text-center transition-all duration-200 cursor-pointer"
+      (click)="fileInput.click()">
+
+      <input #fileInput type="file" accept=".csv" (change)="onFileSelected($event)" class="hidden" />
+
+      @if (!selectedFile()) {
+        <div class="flex flex-col items-center gap-3">
+          <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+            <span class="material-symbols-outlined text-3xl text-slate-400">upload_file</span>
+          </div>
+          <div>
+            <p class="text-base font-medium text-slate-700">Arrastra tu archivo CSV aqui</p>
+            <p class="text-sm text-slate-500 mt-1">o haz clic para seleccionar un archivo</p>
+          </div>
+        </div>
+      } @else {
+        <div class="flex items-center justify-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-2xl text-emerald-600">description</span>
+          </div>
+          <div class="text-left">
+            <p class="text-sm font-semibold text-slate-800">{{ selectedFile()!.name }}</p>
+            <p class="text-xs text-slate-500">{{ formatFileSize(selectedFile()!.size) }}</p>
+          </div>
+          <button (click)="removeFile(); $event.stopPropagation()"
+                  class="ml-4 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+            <span class="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Error -->
+    @if (errorMessage()) {
+      <div class="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-sm text-red-700">
+        <span class="material-symbols-outlined text-lg">error</span>
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <!-- Upload Button -->
+    @if (selectedFile()) {
+      <div class="flex justify-center">
+        <button (click)="uploadFile(); $event.stopPropagation()"
+                [disabled]="isUploading()"
+                class="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-lg font-medium
+                       hover:bg-primary-light shadow-md shadow-primary/20 transition-all
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+          @if (isUploading()) {
+            <span class="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+            Procesando...
+          } @else {
+            <span class="material-symbols-outlined text-lg">cloud_upload</span>
+            Importar Cartas
+          }
+        </button>
+      </div>
+    }
+  }
+
+  <!-- Results -->
+  @if (result()) {
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+            <span class="material-symbols-outlined text-slate-600">list_alt</span>
+          </div>
+          <div>
+            <p class="text-xs text-slate-500 font-medium">Total Procesadas</p>
+            <p class="text-xl font-bold text-slate-800">{{ result()!.total_procesadas }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-emerald-200 p-5 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+            <span class="material-symbols-outlined text-emerald-600">check_circle</span>
+          </div>
+          <div>
+            <p class="text-xs text-emerald-600 font-medium">Exitosas</p>
+            <p class="text-xl font-bold text-emerald-700">{{ result()!.exitosas }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-red-200 p-5 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+            <span class="material-symbols-outlined text-red-600">error</span>
+          </div>
+          <div>
+            <p class="text-xs text-red-600 font-medium">Errores</p>
+            <p class="text-xl font-bold text-red-700">{{ result()!.errores }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-slate-800">Detalle de Importacion</h2>
+        <button (click)="removeFile()" class="flex items-center gap-2 px-3 py-1.5 text-sm text-primary hover:bg-primary/5 rounded-lg font-medium transition-colors">
+          <span class="material-symbols-outlined text-lg">replay</span>
+          Nueva Carga
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500">
+            <tr>
+              <th class="px-5 py-3 border-b border-slate-200">Fila</th>
+              <th class="px-5 py-3 border-b border-slate-200">Nomenclatura</th>
+              <th class="px-5 py-3 border-b border-slate-200">Nombre</th>
+              <th class="px-5 py-3 border-b border-slate-200">Estado</th>
+              <th class="px-5 py-3 border-b border-slate-200">Mensaje</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (row of result()!.detalle; track row.fila) {
+              <tr [ngClass]="{'bg-emerald-50/50': row.exito, 'bg-red-50/50': !row.exito}" class="hover:bg-slate-50 transition-colors">
+                <td class="px-5 py-3 text-slate-600 font-mono text-xs">{{ row.fila }}</td>
+                <td class="px-5 py-3 font-mono text-slate-800 font-medium">{{ row.nomenclatura || '—' }}</td>
+                <td class="px-5 py-3 text-slate-700">{{ row.nombre || '—' }}</td>
+                <td class="px-5 py-3">
+                  @if (row.exito) {
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                      <span class="material-symbols-outlined text-sm">check</span> OK
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                      <span class="material-symbols-outlined text-sm">close</span> Error
+                    </span>
+                  }
+                </td>
+                <td class="px-5 py-3 text-xs" [ngClass]="{'text-emerald-600': row.exito, 'text-red-600': !row.exito}">{{ row.mensaje }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
