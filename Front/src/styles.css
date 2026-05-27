@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 /* Indicar a Tailwind v4 dónde buscar las clases utilitarias */
 @source "./app/**/*.html";
@@ -7,6 +8,13 @@
 /* ============================================
    Tema Personalizado - Mapoteca UAS
    ============================================ */
+.map-container {
+  height: 320px;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #cbd5e1;
+  z-index: 10;
+}
 @theme {
   /* Colores Primarios UAS */
   --color-primary: #003366;

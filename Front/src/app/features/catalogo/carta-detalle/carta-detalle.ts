@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
@@ -8,6 +8,7 @@ import { AuthService } from '../../../core/service/auth';
 import { Carta } from '../../../core/models/carta';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import * as L from 'leaflet';
 
 @Component({
   selector: 'app-carta-detalle',
@@ -16,7 +17,7 @@ import { environment } from '../../../../environments/environment';
   templateUrl: './carta-detalle.html',
   styleUrl: './carta-detalle.css',
 })
-export default class CartaDetalleComponent implements OnInit {
+export default class CartaDetalleComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cartaService = inject(CartaService);
@@ -27,6 +28,8 @@ export default class CartaDetalleComponent implements OnInit {
   carta = signal<Carta | null>(null);
   isLoading = signal(true);
   errorMessage = signal('');
+
+  private map: L.Map | null = null;
 
   // Baja modal
   showBajaModal = signal(false);
@@ -51,6 +54,64 @@ export default class CartaDetalleComponent implements OnInit {
       return;
     }
     this.loadCarta(id);
+  }
+
+  ngOnDestroy() {
+    this.destroyMap();
+  }
+
+  private destroyMap() {
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
+    }
+  }
+
+  private initMap(carta: Carta) {
+    this.destroyMap();
+
+    const norte = Number(carta.limites_norte);
+    const sur = Number(carta.limites_sur);
+    const este = Number(carta.limites_este);
+    const oeste = Number(carta.limites_oeste);
+
+    // Si no cuenta con coordenadas válidas, no se genera el visor
+    if (!norte || !sur || !este || !oeste) {
+      return;
+    }
+
+    // Calcular el punto medio (centro)
+    const lat = (norte + sur) / 2;
+    const lng = (este + oeste) / 2;
+
+    setTimeout(() => {
+      const mapEl = document.getElementById('map-detail');
+      if (!mapEl) return;
+
+      // Configuración de los iconos por defecto desde CDN para evitar problemas de rutas de bundle
+      const iconDefault = L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+      L.Marker.prototype.options.icon = iconDefault;
+
+      this.map = L.map('map-detail', {
+        center: [lat, lng],
+        zoom: 11,
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contribuyentes'
+      }).addTo(this.map);
+
+      L.marker([lat, lng]).addTo(this.map)
+        .bindPopup(`<b>${carta.nombre}</b><br>${carta.nomenclatura}`)
+        .openPopup();
+    }, 50);
   }
 
   openBajaModal() { this.showBajaModal.set(true); }
@@ -154,8 +215,15 @@ export default class CartaDetalleComponent implements OnInit {
   private loadCarta(id: string) {
     this.isLoading.set(true);
     this.cartaService.getCarta(id).subscribe({
-      next: (data) => { this.carta.set(data); this.isLoading.set(false); },
-      error: () => { this.errorMessage.set('No se pudo cargar la carta.'); this.isLoading.set(false); },
+      next: (data) => {
+        this.carta.set(data);
+        this.isLoading.set(false);
+        this.initMap(data);
+      },
+      error: () => {
+        this.errorMessage.set('No se pudo cargar la carta.');
+        this.isLoading.set(false);
+      },
     });
   }
 }

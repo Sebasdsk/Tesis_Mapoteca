@@ -114,25 +114,33 @@
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
         <h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
           <span class="material-symbols-outlined text-primary text-xl">explore</span>
-          Límites Geográficos
+          Límites Geográficos e Ubicación
         </h2>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <div class="bg-slate-50 rounded-lg p-3">
-            <p class="text-xs text-slate-500 mb-1">Norte</p>
-            <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_norte || '—' }}</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Coordenadas -->
+          <div class="grid grid-cols-2 gap-4 text-center self-center">
+            <div class="bg-slate-50 rounded-lg p-3">
+              <p class="text-xs text-slate-500 mb-1">Norte</p>
+              <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_norte || '—' }}</p>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-3">
+              <p class="text-xs text-slate-500 mb-1">Sur</p>
+              <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_sur || '—' }}</p>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-3">
+              <p class="text-xs text-slate-500 mb-1">Este</p>
+              <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_este || '—' }}</p>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-3">
+              <p class="text-xs text-slate-500 mb-1">Oeste</p>
+              <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_oeste || '—' }}</p>
+            </div>
           </div>
-          <div class="bg-slate-50 rounded-lg p-3">
-            <p class="text-xs text-slate-500 mb-1">Sur</p>
-            <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_sur || '—' }}</p>
-          </div>
-          <div class="bg-slate-50 rounded-lg p-3">
-            <p class="text-xs text-slate-500 mb-1">Este</p>
-            <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_este || '—' }}</p>
-          </div>
-          <div class="bg-slate-50 rounded-lg p-3">
-            <p class="text-xs text-slate-500 mb-1">Oeste</p>
-            <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_oeste || '—' }}</p>
+
+          <!-- Mapa Visor -->
+          <div>
+            <div id="map-detail" class="map-container"></div>
           </div>
         </div>
       </div>
