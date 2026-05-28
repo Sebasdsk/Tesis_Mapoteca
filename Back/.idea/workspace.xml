@@ -5,11 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8bed7dee-da8c-419d-b2d5-3e6ae08b0c95" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../Front/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../Front/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Front/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../Front/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Front/src/app/features/catalogo/carta-detalle/carta-detalle.html" beforeDir="false" afterPath="$PROJECT_DIR$/../Front/src/app/features/catalogo/carta-detalle/carta-detalle.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Front/src/app/features/catalogo/carta-detalle/carta-detalle.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../Front/src/app/features/catalogo/carta-detalle/carta-detalle.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Front/src/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/../Front/src/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/v1/endpoints/cartas.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/v1/endpoints/cartas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models/carta.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/carta.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/carta.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/schemas/carta.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

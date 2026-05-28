@@ -101,9 +101,9 @@ export default class CargaMasivaComponent {
   }
 
   downloadTemplate() {
-    const headers = 'nomenclatura,nombre,escala,tipo_carta,estado_republica,zona_utm,elipsoide,disponibilidad,notas';
-    const example1 = 'G13C56,Culiacan Rosales,1:50000,TOPOGRAFICA,Sinaloa,13N,WGS84,FISICA,Carta en buen estado';
-    const example2 = 'E14B39,Ciudad Obregon,1:50000,TOPOGRAFICA,Sonora,12N,Clarke 1866,FISICA,';
+    const headers = 'nomenclatura,nombre,escala,tipo_carta,estado_republica,zona_utm,elipsoide,proyeccion_cartografica,coordenadas_utm_x,coordenadas_utm_y,coordenadas_latitud,coordenadas_longitud,limites_detalle,disponibilidad,fecha_edicion,notas';
+    const example1 = 'G13C56,Culiacan Rosales,1:50,000,TOPOGRAFICA,Sinaloa,13,CLARKE DE 1866,Transversa de Mercator,,,24° 48´,107° 23´,,FISICA,1983-01-01,Carta en buen estado';
+    const example2 = 'E13B26,Nombre Carta,1:50,000,GEOLOGICA,"Durango, Sinaloa",13,GRS80,Transversa de Mercator,2794000,702000,,,,FISICA,1980-01-01,';
     const csv = [headers, example1, example2].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

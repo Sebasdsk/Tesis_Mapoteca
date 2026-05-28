@@ -23,7 +23,7 @@ export type Disponibilidad =
 /**
  * Tipo de coordenadas
  */
-export type TipoCoordenadas = 'ALTOMETRICO' | 'GEODESICO';
+export type TipoCoordenadas = 'LIMITES' | 'UTM' | 'GEODESICO' | 'AMBAS' | 'ALTOMETRICO';
 
 /**
  * Metadata de INEGI almacenada en JSONB
@@ -47,6 +47,12 @@ export interface Carta {
   elipsoide: string | null;
   zona_utm: string | null;
   tipo_coordenadas: TipoCoordenadas | null;
+  proyeccion_cartografica: string | null;
+  coordenadas_utm_x: string | null;
+  coordenadas_utm_y: string | null;
+  coordenadas_latitud: string | null;
+  coordenadas_longitud: string | null;
+  limites_detalle: string | null;
   limites_norte: number | null;
   limites_sur: number | null;
   limites_este: number | null;

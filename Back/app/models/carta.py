@@ -31,8 +31,11 @@ class DisponibilidadEnum(str, enum.Enum):
 
 class TipoCoordenadasEnum(str, enum.Enum):
     """Coordinate type enumeration"""
-    ALTOMETRICO = "ALTOMETRICO"
+    LIMITES = "LIMITES"
+    UTM = "UTM"
     GEODESICO = "GEODESICO"
+    AMBAS = "AMBAS"
+    ALTOMETRICO = "ALTOMETRICO"
 
 
 class Carta(Base):
@@ -63,6 +66,14 @@ class Carta(Base):
     elipsoide = Column(String(100), nullable=True, comment="Ej: WGS84, GRS80, Clarke 1866")
     zona_utm = Column(String(10), nullable=True, comment="Ej: 12N, 13N")
     tipo_coordenadas = Column(SQLEnum(TipoCoordenadasEnum), nullable=True)
+    proyeccion_cartografica = Column(String(100), nullable=True, comment="Ej: Transversa de Mercator")
+    
+    # New coordinate fields
+    coordenadas_utm_x = Column(String(50), nullable=True, comment="Coordenada UTM X (ej: 702,000)")
+    coordenadas_utm_y = Column(String(50), nullable=True, comment="Coordenada UTM Y (ej: 2,794,000)")
+    coordenadas_latitud = Column(String(50), nullable=True, comment="Latitud geodésica (ej: 25° 15´)")
+    coordenadas_longitud = Column(String(50), nullable=True, comment="Longitud geodésica (ej: 109° 00´)")
+    limites_detalle = Column(String(255), nullable=True, comment="Detalle de límites (ej: ESTATAL, INTERNACIONAL)")
     
     # Geographic limits (in decimal degrees)
     limites_norte = Column(Numeric(10, 6), nullable=True)

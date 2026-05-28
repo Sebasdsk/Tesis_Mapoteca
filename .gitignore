@@ -8,3 +8,4 @@ Back/.env
 /Back/app/__pycache__
 /Back/app/models/__pycache__
 /Back/alembic/__pycache__
+datos de prueba.md

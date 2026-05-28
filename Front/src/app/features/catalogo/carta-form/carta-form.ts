@@ -29,9 +29,15 @@ export default class CartaFormComponent implements OnInit {
     nombre: '',
     escala: '1:50,000',
     tipo_carta: 'TOPOGRAFICA',
-    elipsoide: '',
+    elipsoide: 'CLARKE DE 1866',
     zona_utm: '',
-    tipo_coordenadas: '',
+    tipo_coordenadas: 'LIMITES',
+    proyeccion_cartografica: 'TRANSEVERSA DE MERCATOR',
+    coordenadas_utm_x: '',
+    coordenadas_utm_y: '',
+    coordenadas_latitud: '',
+    coordenadas_longitud: '',
+    limites_detalle: '',
     limites_norte: null,
     limites_sur: null,
     limites_este: null,
@@ -40,8 +46,11 @@ export default class CartaFormComponent implements OnInit {
     estado_republica: '',
     disponibilidad: 'FISICA',
     url_inegi: '',
+    notes: '',
     notas: '',
   };
+
+  selectedEstados: string[] = ['', '', '', ''];
 
   tiposCarta = [
     { value: 'TOPOGRAFICA', label: 'Topográfica' },
@@ -62,9 +71,20 @@ export default class CartaFormComponent implements OnInit {
   ];
 
   tiposCoordenadas = [
-    { value: 'GEOGRAFICAS', label: 'Geográficas' },
-    { value: 'UTM', label: 'UTM' },
-    { value: 'AMBAS', label: 'Ambas' },
+    { value: 'LIMITES', label: 'Límites Geográficos' },
+    { value: 'UTM', label: 'Coordenadas UTM' },
+    { value: 'GEODESICO', label: 'Coordenadas Geodésicas' },
+    { value: 'AMBAS', label: 'Ambas (UTM y Geodésicas)' },
+  ];
+
+  elipsoides = ['CLARKE DE 1866', 'GRS80', 'WGS84', 'S/N'];
+
+  estadosMexico = [
+    'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua',
+    'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Guanajuato', 'Guerrero', 'Hidalgo',
+    'Jalisco', 'México', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla',
+    'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas',
+    'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas', 'Nacional', 'S/N'
   ];
 
   escalas = ['1:50,000', '1:250,000', '1:1,000,000'];
@@ -82,6 +102,10 @@ export default class CartaFormComponent implements OnInit {
     this.isSaving.set(true);
     this.errorMessage.set('');
     this.successMessage.set('');
+
+    // Combinar estados seleccionados
+    const activeEstados = this.selectedEstados.filter(s => !!s);
+    this.formData.estado_republica = activeEstados.length > 0 ? activeEstados.join(', ') : '';
 
     // Limpiar campos vacíos
     const data = this.cleanFormData();
@@ -114,15 +138,44 @@ export default class CartaFormComponent implements OnInit {
   private loadCarta(id: string) {
     this.isLoading.set(true);
     this.cartaService.getCarta(id).subscribe({
-      next: (carta) => {
+      next: (carta: any) => {
+        // Detectar tipo de coordenadas si no viene definido
+        let tipoCoord = carta.tipo_coordenadas;
+        if (!tipoCoord) {
+          if (carta.coordenadas_utm_x && carta.coordenadas_latitud) {
+            tipoCoord = 'AMBAS';
+          } else if (carta.coordenadas_utm_x) {
+            tipoCoord = 'UTM';
+          } else if (carta.coordenadas_latitud) {
+            tipoCoord = 'GEODESICO';
+          } else {
+            tipoCoord = 'LIMITES';
+          }
+        }
+
+        // Cargar estados
+        const states = carta.estado_republica
+          ? carta.estado_republica.split(/,\s*/).map((s: string) => s.trim())
+          : [];
+        this.selectedEstados = ['', '', '', ''];
+        for (let i = 0; i < 4; i++) {
+          this.selectedEstados[i] = states[i] || '';
+        }
+
         this.formData = {
           nomenclatura: carta.nomenclatura || '',
           nombre: carta.nombre || '',
           escala: carta.escala || '1:50,000',
           tipo_carta: carta.tipo_carta || 'TOPOGRAFICA',
-          elipsoide: carta.elipsoide || '',
+          elipsoide: carta.elipsoide || 'CLARKE DE 1866',
           zona_utm: carta.zona_utm || '',
-          tipo_coordenadas: carta.tipo_coordenadas || '',
+          tipo_coordenadas: tipoCoord,
+          proyeccion_cartografica: carta.proyeccion_cartografica || 'TRANSEVERSA DE MERCATOR',
+          coordenadas_utm_x: carta.coordenadas_utm_x || '',
+          coordenadas_utm_y: carta.coordenadas_utm_y || '',
+          coordenadas_latitud: carta.coordenadas_latitud || '',
+          coordenadas_longitud: carta.coordenadas_longitud || '',
+          limites_detalle: carta.limites_detalle || '',
           limites_norte: carta.limites_norte,
           limites_sur: carta.limites_sur,
           limites_este: carta.limites_este,
@@ -150,6 +203,36 @@ export default class CartaFormComponent implements OnInit {
         delete d[key];
       }
     });
+
+    // Según el tipo de coordenadas, eliminar los campos del otro tipo para evitar conflictos
+    if (this.formData.tipo_coordenadas === 'LIMITES') {
+      delete d.coordenadas_utm_x;
+      delete d.coordenadas_utm_y;
+      delete d.coordenadas_latitud;
+      delete d.coordenadas_longitud;
+      delete d.limites_detalle;
+    } else if (this.formData.tipo_coordenadas === 'UTM') {
+      delete d.coordenadas_latitud;
+      delete d.coordenadas_longitud;
+      delete d.limites_norte;
+      delete d.limites_sur;
+      delete d.limites_este;
+      delete d.limites_oeste;
+    } else if (this.formData.tipo_coordenadas === 'GEODESICO') {
+      delete d.coordenadas_utm_x;
+      delete d.coordenadas_utm_y;
+      delete d.zona_utm;
+      delete d.limites_norte;
+      delete d.limites_sur;
+      delete d.limites_este;
+      delete d.limites_oeste;
+    } else if (this.formData.tipo_coordenadas === 'AMBAS') {
+      delete d.limites_norte;
+      delete d.limites_sur;
+      delete d.limites_este;
+      delete d.limites_oeste;
+    }
+
     // Siempre enviar campos requeridos
     d.nomenclatura = this.formData.nomenclatura;
     d.nombre = this.formData.nombre;

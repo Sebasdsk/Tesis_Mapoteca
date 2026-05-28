@@ -67,22 +67,56 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
     }
   }
 
+  parseDMSToDecimal(dmsStr: string | null | undefined, isLongitude = false): number | null {
+    if (!dmsStr) return null;
+    const clean = dmsStr.trim();
+    // Regex para grados, minutos y segundos opcionales (ej: "25° 15´", "25°15'", "109° 00´")
+    const dmsRegex = /(\d+)\s*°\s*(\d+)\s*[´']?\s*(\d+)?/;
+    const match = clean.match(dmsRegex);
+    if (match) {
+      const deg = parseFloat(match[1]);
+      const min = parseFloat(match[2]) || 0;
+      const sec = parseFloat(match[3]) || 0;
+      let decimal = deg + (min / 60) + (sec / 3600);
+      if (isLongitude && decimal > 0) {
+        decimal = -decimal;
+      }
+      return decimal;
+    }
+    const num = Number(clean.replace(/,/g, ''));
+    if (!isNaN(num)) {
+      if (isLongitude && num > 0) {
+        return -num;
+      }
+      return num;
+    }
+    return null;
+  }
+
   private initMap(carta: Carta) {
     this.destroyMap();
 
-    const norte = Number(carta.limites_norte);
-    const sur = Number(carta.limites_sur);
-    const este = Number(carta.limites_este);
-    const oeste = Number(carta.limites_oeste);
+    let lat: number | null = null;
+    let lng: number | null = null;
 
-    // Si no cuenta con coordenadas válidas, no se genera el visor
-    if (!norte || !sur || !este || !oeste) {
-      return;
+    if (carta.tipo_coordenadas === 'LIMITES' || (!carta.coordenadas_latitud && carta.limites_norte)) {
+      const norte = Number(carta.limites_norte);
+      const sur = Number(carta.limites_sur);
+      const este = Number(carta.limites_este);
+      const oeste = Number(carta.limites_oeste);
+      if (norte && sur && este && oeste) {
+        lat = (norte + sur) / 2;
+        lng = (este + oeste) / 2;
+      }
+    } else {
+      lat = this.parseDMSToDecimal(carta.coordenadas_latitud, false);
+      lng = this.parseDMSToDecimal(carta.coordenadas_longitud, true);
     }
 
-    // Calcular el punto medio (centro)
-    const lat = (norte + sur) / 2;
-    const lng = (este + oeste) / 2;
+    // Si no se cuenta con coordenadas válidas, no se genera el visor
+    if (lat === null || lng === null) {
+      return;
+    }
 
     setTimeout(() => {
       const mapEl = document.getElementById('map-detail');
@@ -100,7 +134,7 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
       L.Marker.prototype.options.icon = iconDefault;
 
       this.map = L.map('map-detail', {
-        center: [lat, lng],
+        center: [lat!, lng!],
         zoom: 11,
       });
 
@@ -108,7 +142,7 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contribuyentes'
       }).addTo(this.map);
 
-      L.marker([lat, lng]).addTo(this.map)
+      L.marker([lat!, lng!]).addTo(this.map)
         .bindPopup(`<b>${carta.nombre}</b><br>${carta.nomenclatura}`)
         .openPopup();
     }, 50);

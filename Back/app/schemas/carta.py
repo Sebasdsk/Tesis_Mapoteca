@@ -19,6 +19,12 @@ class CartaBase(BaseModel):
     elipsoide: Optional[str] = Field(None, max_length=100)
     zona_utm: Optional[str] = Field(None, max_length=10)
     tipo_coordenadas: Optional[TipoCoordenadasEnum] = None
+    proyeccion_cartografica: Optional[str] = Field(None, max_length=100)
+    coordenadas_utm_x: Optional[str] = Field(None, max_length=50)
+    coordenadas_utm_y: Optional[str] = Field(None, max_length=50)
+    coordenadas_latitud: Optional[str] = Field(None, max_length=50)
+    coordenadas_longitud: Optional[str] = Field(None, max_length=50)
+    limites_detalle: Optional[str] = Field(None, max_length=255)
     limites_norte: Optional[Decimal] = None
     limites_sur: Optional[Decimal] = None
     limites_este: Optional[Decimal] = None
@@ -60,6 +66,12 @@ class CartaUpdate(BaseModel):
     elipsoide: Optional[str] = Field(None, max_length=100)
     zona_utm: Optional[str] = Field(None, max_length=10)
     tipo_coordenadas: Optional[TipoCoordenadasEnum] = None
+    proyeccion_cartografica: Optional[str] = Field(None, max_length=100)
+    coordenadas_utm_x: Optional[str] = Field(None, max_length=50)
+    coordenadas_utm_y: Optional[str] = Field(None, max_length=50)
+    coordenadas_latitud: Optional[str] = Field(None, max_length=50)
+    coordenadas_longitud: Optional[str] = Field(None, max_length=50)
+    limites_detalle: Optional[str] = Field(None, max_length=255)
     limites_norte: Optional[Decimal] = None
     limites_sur: Optional[Decimal] = None
     limites_este: Optional[Decimal] = None

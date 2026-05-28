@@ -10,7 +10,7 @@
       {{ isEditing() ? 'Editar Carta' : 'Registrar Nueva Carta' }}
     </h1>
     <p class="text-sm text-slate-500 mt-0.5">
-      {{ isEditing() ? 'Modifica los datos de la carta' : 'CU-03: Alta individual de carta cartográfica' }}
+      {{ isEditing() ? 'Modifica los datos de la carta' : 'Alta individual de carta cartográfica' }}
     </p>
   </div>
 
@@ -94,24 +94,27 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Elipsoide</label>
-            <input type="text" [(ngModel)]="formData.elipsoide" name="elipsoide"
-                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
-                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                   placeholder="Ej: Clarke 1866" />
+            <select [(ngModel)]="formData.elipsoide" name="elipsoide"
+                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+              <option value="">Sin especificar</option>
+              @for (el of elipsoides; track el) {
+                <option [value]="el">{{ el }}</option>
+              }
+            </select>
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Zona UTM</label>
             <input type="text" [(ngModel)]="formData.zona_utm" name="zona_utm"
                    class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                   placeholder="Ej: 13N" />
+                   placeholder="Ej: 13" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Tipo Coordenadas</label>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Método de Registro de Coordenadas</label>
             <select [(ngModel)]="formData.tipo_coordenadas" name="tipo_coordenadas"
                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white
                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
-              <option value="">Sin especificar</option>
               @for (tc of tiposCoordenadas; track tc.value) {
                 <option [value]="tc.value">{{ tc.label }}</option>
               }
@@ -120,43 +123,162 @@
         </div>
       </div>
 
-      <!-- Límites Geográficos -->
+      <!-- Coordenadas y Límites -->
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
         <h2 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
           <span class="material-symbols-outlined text-primary text-xl">explore</span>
-          Límites Geográficos
+          Coordenadas y Límites de la Carta
         </h2>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Norte</label>
-            <input type="number" step="0.0001" [(ngModel)]="formData.limites_norte" name="limites_norte"
-                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
-                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                   placeholder="24.8000" />
+        @if (formData.tipo_coordenadas === 'LIMITES') {
+          <!-- Límites Geográficos -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Norte (Decimal)</label>
+              <input type="number" step="0.0001" [(ngModel)]="formData.limites_norte" name="limites_norte"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="24.8000" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Sur (Decimal)</label>
+              <input type="number" step="0.0001" [(ngModel)]="formData.limites_sur" name="limites_sur"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="24.6667" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Este (Decimal)</label>
+              <input type="number" step="0.0001" [(ngModel)]="formData.limites_este" name="limites_este"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="-107.0000" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Oeste (Decimal)</label>
+              <input type="number" step="0.0001" [(ngModel)]="formData.limites_oeste" name="limites_oeste"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="-107.2500" />
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Sur</label>
-            <input type="number" step="0.0001" [(ngModel)]="formData.limites_sur" name="limites_sur"
-                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
-                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                   placeholder="24.6667" />
+        }
+
+        @if (formData.tipo_coordenadas === 'UTM') {
+          <!-- Coordenadas UTM -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Coordenada UTM X</label>
+              <input type="text" [(ngModel)]="formData.coordenadas_utm_x" name="coordenadas_utm_x"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: 702,000" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Coordenada UTM Y</label>
+              <input type="text" [(ngModel)]="formData.coordenadas_utm_y" name="coordenadas_utm_y"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: 2,794,000" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Proyección Cartográfica</label>
+              <input type="text" [(ngModel)]="formData.proyeccion_cartografica" name="proyeccion_cartografica"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: Transversa de Mercator" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Límites (Descripción)</label>
+              <input type="text" [(ngModel)]="formData.limites_detalle" name="limites_detalle"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: ESTATAL, INTERNACIONAL" />
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Este</label>
-            <input type="number" step="0.0001" [(ngModel)]="formData.limites_este" name="limites_este"
-                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
-                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                   placeholder="-107.0000" />
+        }
+
+        @if (formData.tipo_coordenadas === 'GEODESICO') {
+          <!-- Coordenadas Geodésicas -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Latitud (Geodésica)</label>
+              <input type="text" [(ngModel)]="formData.coordenadas_latitud" name="coordenadas_latitud"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: 25° 15´" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Longitud (Geodésica)</label>
+              <input type="text" [(ngModel)]="formData.coordenadas_longitud" name="coordenadas_longitud"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: 109° 00´" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Proyección Cartográfica</label>
+              <input type="text" [(ngModel)]="formData.proyeccion_cartografica" name="proyeccion_cartografica"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: Transversa de Mercator" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Límites (Descripción)</label>
+              <input type="text" [(ngModel)]="formData.limites_detalle" name="limites_detalle"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: ESTATAL, INTERNACIONAL" />
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Oeste</label>
-            <input type="number" step="0.0001" [(ngModel)]="formData.limites_oeste" name="limites_oeste"
-                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
-                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                   placeholder="-107.2500" />
+        }
+
+        @if (formData.tipo_coordenadas === 'AMBAS') {
+          <!-- Coordenadas UTM y Geodésicas -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Coordenada UTM X</label>
+              <input type="text" [(ngModel)]="formData.coordenadas_utm_x" name="coordenadas_utm_x"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: 702,000" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Coordenada UTM Y</label>
+              <input type="text" [(ngModel)]="formData.coordenadas_utm_y" name="coordenadas_utm_y"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: 2,794,000" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Latitud (Geodésica)</label>
+              <input type="text" [(ngModel)]="formData.coordenadas_latitud" name="coordenadas_latitud"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: 25° 15´" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Longitud (Geodésica)</label>
+              <input type="text" [(ngModel)]="formData.coordenadas_longitud" name="coordenadas_longitud"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: 109° 00´" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Proyección Cartográfica</label>
+              <input type="text" [(ngModel)]="formData.proyeccion_cartografica" name="proyeccion_cartografica"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: Transversa de Mercator" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Límites (Descripción)</label>
+              <input type="text" [(ngModel)]="formData.limites_detalle" name="limites_detalle"
+                     class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
+                            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                     placeholder="Ej: ESTATAL, INTERNACIONAL" />
+            </div>
           </div>
-        </div>
+        }
       </div>
 
       <!-- Ubicación + Estado -->
@@ -167,13 +289,25 @@
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Estado de la República</label>
-            <input type="text" [(ngModel)]="formData.estado_republica" name="estado_republica"
-                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
-                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                   placeholder="Ej: Sinaloa" />
+          <div class="col-span-1 md:col-span-3 border-b border-slate-100 pb-4">
+            <label class="block text-sm font-medium text-slate-700 mb-2">Estados de la República (Hasta 4)</label>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              @for (idx of [0, 1, 2, 3]; track idx) {
+                <div>
+                  <span class="text-xs text-slate-400 block mb-1">Estado {{ idx + 1 }}</span>
+                  <select [(ngModel)]="selectedEstados[idx]" [name]="'estado_republica_' + idx"
+                          class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white
+                                 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <option value="">(Ninguno)</option>
+                    @for (est of estadosMexico; track est) {
+                      <option [value]="est">{{ est }}</option>
+                    }
+                  </select>
+                </div>
+              }
+            </div>
           </div>
+
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Disponibilidad</label>
             <select [(ngModel)]="formData.disponibilidad" name="disponibilidad"

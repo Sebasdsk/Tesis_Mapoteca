@@ -380,35 +380,113 @@ async def carga_masiva_cartas(
     
     reader = csv.DictReader(io.StringIO(decoded))
     
-    # Validate required headers
-    required_headers = {'nomenclatura', 'nombre', 'escala', 'tipo_carta'}
+    # Flexible header mapping
+    header_mapping = {
+        'nombre': ['nombre', 'nombre de la carta', 'nombre_carta', 'title'],
+        'tipo_carta': ['tipo_carta', 'tipo de carta', 'tipo'],
+        'escala': ['escala', 'scale'],
+        'proyeccion_cartografica': ['proyeccion_cartografica', 'proyeccion', 'proyección', 'proyeccion cartografica', 'proyección cartográfica'],
+        'elipsoide': ['elipsoide', 'elipsoide de referencia', 'elipsoide_referencia', 'elipsoide de referencia', 'elipsoide de referencia'],
+        'zona_utm': ['zona_utm', 'zona utm', 'zona'],
+        'coordenadas_utm_x': ['coordenadas_utm_x', 'coordenadas utm x', 'x', 'utm x', 'coordenada utm x'],
+        'coordenadas_utm_y': ['coordenadas_utm_y', 'coordenadas utm y', 'y', 'utm y', 'coordenada utm y'],
+        'coordenadas_latitud': ['coordenadas_latitud', 'coordenadas geodesicas latitud', 'coordenadas geodésicas latitud', 'latitud', 'latitud geodesica', 'latitud geodésica'],
+        'coordenadas_longitud': ['coordenadas_longitud', 'coordenadas geodesicas longitud', 'coordenadas geodésicas longitud', 'longitud', 'longitud geodesica', 'longitud geodésica'],
+        'limites_detalle': ['limites_detalle', 'limites', 'límites', 'limite', 'límite'],
+        'nomenclatura': ['nomenclatura', 'nomeclatura', 'clave', 'codigo', 'código'],
+        'fecha_edicion': ['fecha_edicion', 'fecha de edición', 'fecha de edicion', 'año', 'anio', 'fecha', 'fecha de edicion'],
+        'estado_republica': ['estado_republica', 'estado', 'estados', 'estado de la republica', 'estado de la república'],
+        'disponibilidad': ['disponibilidad', 'status', 'disponible'],
+        'notas': ['notas', 'notas_adicionales', 'comentarios', 'comentario', 'notes']
+    }
+
     if not reader.fieldnames:
         raise HTTPException(status_code=400, detail="El archivo CSV esta vacio o no tiene encabezados")
-    
-    actual_headers = {h.strip().lower() for h in reader.fieldnames}
-    missing = required_headers - actual_headers
+
+    import unicodedata
+    import re
+    from datetime import date, datetime
+
+    def clean_header(h):
+        h = h.strip().lower()
+        h = ''.join(c for c in unicodedata.normalize('NFD', h) if unicodedata.category(c) != 'Mn')
+        h = h.replace('_', ' ').replace('-', ' ')
+        return h
+
+    # Map actual CSV headers to standard database fields
+    field_map = {}
+    for db_field, aliases in header_mapping.items():
+        for alias in aliases:
+            cleaned_alias = clean_header(alias)
+            for h in reader.fieldnames:
+                if clean_header(h) == cleaned_alias:
+                    field_map[db_field] = h
+                    break
+            if db_field in field_map:
+                break
+
+    # Required database fields
+    required_fields = ['nomenclatura', 'nombre', 'escala', 'tipo_carta']
+    missing = [req for req in required_fields if req not in field_map]
     if missing:
         raise HTTPException(
             status_code=400,
-            detail=f"Faltan columnas obligatorias: {', '.join(missing)}. Columnas encontradas: {', '.join(reader.fieldnames)}"
+            detail=f"Faltan columnas obligatorias (o no se pudieron mapear): {', '.join(missing)}. Columnas encontradas: {', '.join(reader.fieldnames)}"
         )
-    
+
+    def parse_csv_date(val: str) -> Optional[date]:
+        val = val.strip()
+        if not val:
+            return None
+        # Try 4-digit year
+        if val.isdigit() and len(val) == 4:
+            try:
+                return date(int(val), 1, 1)
+            except ValueError:
+                pass
+        # Try different formats
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%Y/%m/%d"):
+            try:
+                return datetime.strptime(val, fmt).date()
+            except ValueError:
+                continue
+        return None
+
+    def normalize_estados(val: str) -> Optional[str]:
+        if not val:
+            return None
+        # Replace " Y " or " y " with comma
+        val_clean = re.sub(r'\s+[yY]\s+', ', ', val)
+        parts = [p.strip().title() for p in val_clean.split(',') if p.strip()]
+        # Fix casing for known articles in states
+        parts = [p.replace(" De ", " de ").replace(" D.f.", " D.F.").replace(" Cdmx", " CDMX") for p in parts]
+        # Max length check to avoid truncating
+        return ", ".join(parts)[:100] if parts else None
+
     resultados = []
     exitosas = 0
     errores_count = 0
     
-    # Map of valid tipo_carta values
     tipos_validos = {e.value: e for e in TipoCartaEnum}
     disponibilidad_validos = {e.value: e for e in DisponibilidadEnum}
     
-    for i, row in enumerate(reader, start=2):  # start=2 because row 1 is headers
-        # Normalize keys
-        row = {k.strip().lower(): v.strip() if v else '' for k, v in row.items()}
-        
-        nomenclatura = row.get('nomenclatura', '').upper().strip()
-        nombre = row.get('nombre', '').strip()
-        escala = row.get('escala', '').strip()
-        tipo_carta_str = row.get('tipo_carta', '').upper().strip()
+    # Iterate through rows
+    for i, row in enumerate(reader, start=2):
+        # Check if row is completely empty
+        if not any(row.values()):
+            continue
+
+        # Get values using field_map
+        def get_val(field_name):
+            col_name = field_map.get(field_name)
+            if col_name and col_name in row:
+                return (row[col_name] or '').strip()
+            return ''
+
+        nomenclatura = get_val('nomenclatura').upper()
+        nombre = get_val('nombre')
+        escala = get_val('escala')
+        tipo_carta_str = get_val('tipo_carta').upper()
         
         # Validations
         if not nomenclatura:
@@ -435,6 +513,12 @@ async def carga_masiva_cartas(
             ))
             continue
         
+        # Normalize escala format (replace spaces)
+        escala = escala.replace(' ', '')
+        # If it doesn't start with 1:, add it
+        if escala and not escala.startswith('1:'):
+            escala = f"1:{escala}"
+
         if tipo_carta_str not in tipos_validos:
             errores_count += 1
             resultados.append(CargaMasivaResultRow(
@@ -463,24 +547,52 @@ async def carga_masiva_cartas(
             ))
             continue
         
-        # Parse optional fields
-        disponibilidad_str = row.get('disponibilidad', 'FISICA').upper().strip()
+        disponibilidad_str = get_val('disponibilidad').upper()
         disponibilidad = disponibilidad_validos.get(disponibilidad_str, DisponibilidadEnum.FISICA)
         
+        # Determine TipoCoordenadas
+        utm_x = get_val('coordenadas_utm_x')
+        utm_y = get_val('coordenadas_utm_y')
+        lat = get_val('coordenadas_latitud')
+        lng = get_val('coordenadas_longitud')
+        limites = get_val('limites_detalle')
+        
+        tipo_coord = None
+        from app.models.carta import TipoCoordenadasEnum
+        if utm_x and utm_y and lat and lng:
+            tipo_coord = TipoCoordenadasEnum.AMBAS
+        elif utm_x and utm_y:
+            tipo_coord = TipoCoordenadasEnum.UTM
+        elif lat and lng:
+            tipo_coord = TipoCoordenadasEnum.GEODESICO
+        elif limites:
+            tipo_coord = TipoCoordenadasEnum.LIMITES
+
         try:
+            # Parse year/date
+            f_edicion = parse_csv_date(get_val('fecha_edicion'))
+            
             carta = Carta(
                 nomenclatura=nomenclatura,
                 nombre=nombre,
                 escala=escala,
                 tipo_carta=tipos_validos[tipo_carta_str],
-                estado_republica=row.get('estado_republica', '') or None,
-                zona_utm=row.get('zona_utm', '') or None,
-                elipsoide=row.get('elipsoide', '') or None,
+                proyeccion_cartografica=get_val('proyeccion_cartografica') or None,
+                elipsoide=get_val('elipsoide') or None,
+                zona_utm=get_val('zona_utm') or None,
+                coordenadas_utm_x=utm_x or None,
+                coordenadas_utm_y=utm_y or None,
+                coordenadas_latitud=lat or None,
+                coordenadas_longitud=lng or None,
+                limites_detalle=limites or None,
+                tipo_coordenadas=tipo_coord,
+                fecha_edicion=f_edicion,
+                estado_republica=normalize_estados(get_val('estado_republica')),
                 disponibilidad=disponibilidad,
-                notas=row.get('notas', '') or None,
+                notas=get_val('notas') or None,
             )
             db.add(carta)
-            db.flush()  # flush to catch DB errors before commit
+            db.flush()
             
             exitosas += 1
             resultados.append(CargaMasivaResultRow(

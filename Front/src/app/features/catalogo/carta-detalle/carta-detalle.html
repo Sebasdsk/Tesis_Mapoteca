@@ -66,7 +66,7 @@
           </div>
           @if (carta()!.estado_republica) {
             <div class="flex justify-between">
-              <dt class="text-sm text-slate-500">Estado</dt>
+              <dt class="text-sm text-slate-500">Estado(s)</dt>
               <dd class="text-sm font-medium text-slate-800">{{ carta()!.estado_republica }}</dd>
             </div>
           }
@@ -99,9 +99,15 @@
               <dd class="text-sm font-medium text-slate-800">{{ carta()!.zona_utm }}</dd>
             </div>
           }
+          @if (carta()!.proyeccion_cartografica) {
+            <div class="flex justify-between">
+              <dt class="text-sm text-slate-500">Proyección</dt>
+              <dd class="text-sm font-medium text-slate-800">{{ carta()!.proyeccion_cartografica }}</dd>
+            </div>
+          }
           @if (carta()!.tipo_coordenadas) {
             <div class="flex justify-between">
-              <dt class="text-sm text-slate-500">Coordenadas</dt>
+              <dt class="text-sm text-slate-500">Sistema Coordenadas</dt>
               <dd class="text-sm font-medium text-slate-800">{{ carta()!.tipo_coordenadas }}</dd>
             </div>
           }
@@ -109,38 +115,90 @@
       </div>
     </div>
 
-    <!-- Límites Geográficos -->
-    @if (carta()!.limites_norte || carta()!.limites_sur || carta()!.limites_este || carta()!.limites_oeste) {
+    <!-- Límites y Coordenadas -->
+    @if (carta()!.limites_norte || carta()!.coordenadas_latitud || carta()!.coordenadas_utm_x) {
       <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
         <h2 class="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
           <span class="material-symbols-outlined text-primary text-xl">explore</span>
-          Límites Geográficos e Ubicación
+          Ubicación y Coordenadas
         </h2>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <!-- Coordenadas -->
-          <div class="grid grid-cols-2 gap-4 text-center self-center">
-            <div class="bg-slate-50 rounded-lg p-3">
-              <p class="text-xs text-slate-500 mb-1">Norte</p>
-              <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_norte || '—' }}</p>
-            </div>
-            <div class="bg-slate-50 rounded-lg p-3">
-              <p class="text-xs text-slate-500 mb-1">Sur</p>
-              <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_sur || '—' }}</p>
-            </div>
-            <div class="bg-slate-50 rounded-lg p-3">
-              <p class="text-xs text-slate-500 mb-1">Este</p>
-              <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_este || '—' }}</p>
-            </div>
-            <div class="bg-slate-50 rounded-lg p-3">
-              <p class="text-xs text-slate-500 mb-1">Oeste</p>
-              <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_oeste || '—' }}</p>
-            </div>
+          <!-- Info de Coordenadas -->
+          <div class="space-y-4 self-center">
+            
+            @if (carta()!.tipo_coordenadas === 'LIMITES' || (!carta()!.coordenadas_latitud && !carta()!.coordenadas_utm_x)) {
+              <div class="grid grid-cols-2 gap-4 text-center">
+                <div class="bg-slate-50 rounded-lg p-3">
+                  <p class="text-xs text-slate-500 mb-1">Norte</p>
+                  <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_norte || '—' }}</p>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-3">
+                  <p class="text-xs text-slate-500 mb-1">Sur</p>
+                  <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_sur || '—' }}</p>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-3">
+                  <p class="text-xs text-slate-500 mb-1">Este</p>
+                  <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_este || '—' }}</p>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-3">
+                  <p class="text-xs text-slate-500 mb-1">Oeste</p>
+                  <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.limites_oeste || '—' }}</p>
+                </div>
+              </div>
+            }
+
+            @if (carta()!.tipo_coordenadas === 'UTM' || carta()!.tipo_coordenadas === 'AMBAS') {
+              <div class="bg-slate-50 rounded-xl p-4 space-y-2">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Coordenadas UTM</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <span class="text-xs text-slate-500">UTM X</span>
+                    <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.coordenadas_utm_x }}</p>
+                  </div>
+                  <div>
+                    <span class="text-xs text-slate-500">UTM Y</span>
+                    <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.coordenadas_utm_y }}</p>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (carta()!.tipo_coordenadas === 'GEODESICO' || carta()!.tipo_coordenadas === 'AMBAS') {
+              <div class="bg-slate-50 rounded-xl p-4 space-y-2">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Coordenadas Geodésicas</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <span class="text-xs text-slate-500">Latitud</span>
+                    <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.coordenadas_latitud }}</p>
+                  </div>
+                  <div>
+                    <span class="text-xs text-slate-500">Longitud</span>
+                    <p class="text-sm font-mono font-medium text-slate-800">{{ carta()!.coordenadas_longitud }}</p>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (carta()!.limites_detalle) {
+              <div class="bg-slate-50 rounded-xl p-4">
+                <span class="text-xs text-slate-500 block mb-1">Detalle de Límites (Interés)</span>
+                <p class="text-sm font-medium text-slate-800">{{ carta()!.limites_detalle }}</p>
+              </div>
+            }
           </div>
 
           <!-- Mapa Visor -->
           <div>
-            <div id="map-detail" class="map-container"></div>
+            @if (carta()!.tipo_coordenadas !== 'UTM') {
+              <div id="map-detail" class="map-container"></div>
+            } @else {
+              <div class="bg-slate-50 border border-dashed border-slate-200 rounded-xl h-60 flex flex-col items-center justify-center p-6 text-center">
+                <span class="material-symbols-outlined text-3xl text-slate-400 mb-2">map</span>
+                <p class="text-sm text-slate-600 font-medium">Visualización de mapa no disponible</p>
+                <p class="text-xs text-slate-400 mt-1">El visor requiere coordenadas geodésicas (latitud/longitud) o límites para ubicar la carta.</p>
+              </div>
+            }
           </div>
         </div>
       </div>
