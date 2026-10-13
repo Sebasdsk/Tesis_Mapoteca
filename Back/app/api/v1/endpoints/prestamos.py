@@ -4,7 +4,7 @@ CU-08: Solicitar Préstamo
 CU-09: Registrar Préstamo (Aprobar + Entregar)
 CU-10: Registrar Devolución y Evaluación
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
@@ -98,6 +98,7 @@ def solicitar_prestamo(
 # Listar préstamos
 @router.get("/", response_model=List[PrestamoRead])
 def list_prestamos(
+    response: Response,
     estado: Optional[EstadoPrestamoEnum] = None,
     usuario_id: Optional[UUID] = None,
     carta_id: Optional[UUID] = None,
@@ -127,6 +128,7 @@ def list_prestamos(
         query = query.filter(Prestamo.carta_id == carta_id)
 
     query = query.order_by(Prestamo.created_at.desc())
+    response.headers["X-Total-Count"] = str(query.count())
     return query.offset(skip).limit(limit).all()
 
 

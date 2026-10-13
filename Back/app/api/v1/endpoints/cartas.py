@@ -1,7 +1,7 @@
 """
 Carta management endpoints - CU-03: Registrar Carta Individual
 """
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Response
 import csv
 import io
 from sqlalchemy.orm import Session
@@ -62,6 +62,7 @@ def create_carta(
 
 @router.get("/", response_model=List[CartaSimple])
 def list_cartas(
+    response: Response,
     skip: int = 0,
     limit: int = 50,
     tipo_carta: Optional[TipoCartaEnum] = None,
@@ -74,9 +75,9 @@ def list_cartas(
 ):
     """
     CU-06: Búsqueda y Filtrado (implementación parcial)
-    
+
     List all cartas with optional filters.
-    This is a simplified version - full search will be in CU-06.
+    Devuelve el total de resultados en el header X-Total-Count.
     """
     query = db.query(Carta)
     
@@ -104,7 +105,10 @@ def list_cartas(
     
     # Order by creation date (newest first)
     query = query.order_by(Carta.created_at.desc())
-    
+
+    # Total de resultados (sin paginar) para el header X-Total-Count
+    response.headers["X-Total-Count"] = str(query.count())
+
     # Pagination
     cartas = query.offset(skip).limit(limit).all()
     
@@ -125,6 +129,18 @@ def list_cartas(
         db.commit()
     
     return cartas
+
+
+@router.get("/escalas", response_model=List[str])
+def list_escalas(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """
+    Escalas distintas presentes en el catálogo (para filtros dinámicos).
+    """
+    rows = db.query(Carta.escala).distinct().order_by(Carta.escala).all()
+    return [r[0] for r in rows]
 
 
 @router.get("/{carta_id}", response_model=CartaRead)
