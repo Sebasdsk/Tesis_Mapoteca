@@ -18,15 +18,11 @@ depends_on = None
 
 def upgrade() -> None:
     """Create initial schema"""
-    
-    # Create ENUM types
-    op.execute("""
-        CREATE TYPE tipo_usuario_enum AS ENUM ('ADMIN', 'ESTUDIANTE', 'MAESTRO', 'EXTERNO');
-        CREATE TYPE tipo_carta_enum AS ENUM ('TOPOGRAFICA', 'GEOLOGICA', 'HIDROLOGICA', 'EDAFOLOGICA', 'USO_SUELO', 'CLIMATICA', 'OTRA');
-        CREATE TYPE disponibilidad_enum AS ENUM ('FISICA', 'SOLO_DIGITAL', 'AMBAS', 'EXTRAVIADA', 'DANADA');
-        CREATE TYPE tipo_coordenadas_enum AS ENUM ('ALTOMETRICO', 'GEODESICO');
-    """)
-    
+
+    # NOTA: no crear los ENUM types con op.execute("CREATE TYPE ..."):
+    # los sa.Enum de cada create_table los crean automáticamente y
+    # hacerlo en ambos lados provoca DuplicateObject.
+
     # Create usuarios table
     op.create_table(
         'usuarios',

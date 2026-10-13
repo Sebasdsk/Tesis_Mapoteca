@@ -17,18 +17,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Add new values to tipocoordenadasenum
-    # We execute COMMIT to ensure we are not in a transaction block, as PostgreSQL doesn't allow ALTER TYPE ADD VALUE in a transaction
-    op.execute("COMMIT")
-    for val in ['LIMITES', 'UTM', 'GEODESICO', 'AMBAS']:
-        try:
-            op.execute(f"ALTER TYPE tipocoordenadasenum ADD VALUE '{val}'")
-        except Exception:
-            pass
-        try:
-            op.execute(f"ALTER TYPE tipo_coordenadas_enum ADD VALUE '{val}'")
-        except Exception:
-            pass
+    # Add new values to tipo_coordenadas_enum
+    # PG 12+ permite ADD VALUE dentro de una transacción mientras el valor
+    # no se use en ella; aquí solo se agregan. IF NOT EXISTS lo hace idempotente.
+    # NO usar op.execute("COMMIT") + try/except: un statement fallido aborta
+    # la transacción y los siguientes fallan en cascada.
+    for val in ['LIMITES', 'UTM', 'AMBAS']:
+        op.execute(f"ALTER TYPE tipo_coordenadas_enum ADD VALUE IF NOT EXISTS '{val}'")
 
     # Add columns to cartas table
     op.add_column('cartas', sa.Column('proyeccion_cartografica', sa.String(length=100), nullable=True))
