@@ -14,6 +14,7 @@ from app.core.security import (
     get_password_hash,
 )
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.models.usuario import Usuario
 from app.models.refresh_token import RefreshToken
 from app.schemas.auth import LoginRequest, Token, TokenUser
@@ -82,7 +83,9 @@ def _revoke_from_cookie(request: Request, db: Session) -> None:
 # --- Endpoints ---
 
 @router.post("/login", response_model=Token)
+@limiter.limit("5/minute")
 def login(
+    request: Request,
     login_data: LoginRequest,
     response: Response,
     db: Session = Depends(get_db)
