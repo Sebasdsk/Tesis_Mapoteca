@@ -16,6 +16,14 @@ class PrestamoSolicitar(BaseModel):
     notas_solicitud: Optional[str] = Field(None, max_length=500)
 
 
+class PrestamoDirecto(BaseModel):
+    """Préstamo presencial registrado por el personal (ADMIN/MAESTRO)"""
+    usuario_id: UUID
+    carta_id: UUID
+    fecha_limite: date = Field(..., description="Fecha límite de devolución")
+    notas_admin: Optional[str] = Field(None, max_length=500)
+
+
 class PrestamoAprobar(BaseModel):
     """CU-09: Aprobar solicitud"""
     fecha_limite: date = Field(..., description="Fecha límite de devolución")

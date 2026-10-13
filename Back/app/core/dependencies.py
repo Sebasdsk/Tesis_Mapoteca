@@ -110,3 +110,18 @@ def get_current_admin_user(
         )
 
     return current_user
+
+
+def get_current_admin_or_maestro(
+    current_user: Usuario = Depends(get_current_active_user)
+) -> Usuario:
+    """
+    Dependency para acciones de gestión: permite ADMIN y MAESTRO.
+    """
+    if current_user.tipo_usuario not in ("ADMIN", "MAESTRO"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para esta acción"
+        )
+
+    return current_user

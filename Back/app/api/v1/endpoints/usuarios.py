@@ -3,9 +3,9 @@ User management endpoints - CU-02: Gestión de Usuarios
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from uuid import UUID
-from app.core.dependencies import get_db, get_current_admin_user
+from app.core.dependencies import get_db, get_current_admin_user, get_current_admin_or_maestro
 from app.core.security import get_password_hash, generate_temp_password
 from app.models.usuario import Usuario, TipoUsuarioEnum
 from app.schemas.usuario import (
@@ -13,6 +13,7 @@ from app.schemas.usuario import (
     UsuarioRead, 
     UsuarioUpdate, 
     UsuarioCreateResponse,
+    UsuarioLookup,
     PasswordReset,
     PasswordResetResponse
 )
@@ -103,6 +104,29 @@ def list_usuarios(
     usuarios = query.offset(skip).limit(limit).all()
     
     return usuarios
+
+
+@router.get("/lookup", response_model=List[UsuarioLookup])
+def lookup_usuarios(
+    search: Optional[str] = None,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    current_staff: Usuario = Depends(get_current_admin_or_maestro),
+):
+    """
+    Búsqueda ligera de usuarios activos (ADMIN/MAESTRO) para poder seleccionar
+    al usuario en el registro de un préstamo directo.
+    """
+    query = db.query(Usuario).filter(Usuario.activo == True)
+
+    if search:
+        term = f"%{search}%"
+        query = query.filter(
+            (Usuario.nombre_completo.ilike(term)) |
+            (Usuario.numero_identificacion.ilike(term))
+        )
+
+    return query.order_by(Usuario.nombre_completo).limit(limit).all()
 
 
 @router.get("/{usuario_id}", response_model=UsuarioRead)

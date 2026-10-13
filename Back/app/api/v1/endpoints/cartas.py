@@ -7,7 +7,7 @@ import io
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
-from app.core.dependencies import get_db, get_current_admin_user, get_current_active_user
+from app.core.dependencies import get_db, get_current_admin_or_maestro, get_current_active_user
 from app.models.usuario import Usuario
 from app.models.carta import Carta, TipoCartaEnum, DisponibilidadEnum
 from app.models.consulta import ConsultaCatalogo
@@ -30,7 +30,7 @@ router = APIRouter()
 def create_carta(
     carta_data: CartaCreate,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """
     CU-03: Registrar Carta Individual
@@ -202,7 +202,7 @@ def update_carta(
     carta_id: UUID,
     carta_data: CartaUpdate,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """
     CU-05: Modificar Carta
@@ -234,7 +234,7 @@ def dar_baja_carta(
     carta_id: UUID,
     baja_data: CartaBaja,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """
     CU-05: Dar de Baja Carta (Expurgo)
@@ -287,7 +287,7 @@ def dar_baja_carta(
 def delete_carta(
     carta_id: UUID,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """
     CU-05: Eliminar Carta (Hard Delete)
@@ -350,7 +350,7 @@ def delete_carta(
 @router.get("/stats/summary")
 def get_cartas_summary(
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """
     Get summary statistics of cartas
@@ -389,7 +389,7 @@ def get_cartas_summary(
 async def carga_masiva_cartas(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user),
+    current_admin: Usuario = Depends(get_current_admin_or_maestro),
 ):
     """
     CU-04: Importacion masiva de cartas desde archivo CSV.

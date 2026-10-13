@@ -9,13 +9,14 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime, timezone
-from app.core.dependencies import get_db, get_current_admin_user, get_current_active_user
+from app.core.dependencies import get_db, get_current_admin_or_maestro, get_current_active_user
 from app.models.usuario import Usuario
 from app.models.carta import Carta, DisponibilidadEnum
 from app.models.prestamo import Prestamo, EstadoPrestamoEnum
 from app.services.prestamos import actualizar_prestamos_vencidos
 from app.schemas.prestamo import (
     PrestamoSolicitar,
+    PrestamoDirecto,
     PrestamoAprobar,
     PrestamoRechazar,
     PrestamoEntregar,
@@ -25,6 +26,9 @@ from app.schemas.prestamo import (
 
 
 router = APIRouter()
+
+# Roles con capacidad de gestionar préstamos (además de ver todos)
+STAFF_ROLES = ("ADMIN", "MAESTRO")
 
 
 # CU-08: Solicitar Préstamo
@@ -95,6 +99,68 @@ def solicitar_prestamo(
     return prestamo
 
 
+# Préstamo directo (personal ADMIN/MAESTRO): registra un préstamo ya entregado
+@router.post("/directo", response_model=PrestamoRead, status_code=status.HTTP_201_CREATED)
+def registrar_prestamo_directo(
+    data: PrestamoDirecto,
+    db: Session = Depends(get_db),
+    current_staff: Usuario = Depends(get_current_admin_or_maestro),
+):
+    """
+    Registra un préstamo presencial: crea el préstamo ya en ENTREGADO y deja la
+    carta ocupada. Lo registra el personal (ADMIN/MAESTRO) a nombre de un usuario.
+    """
+    actualizar_prestamos_vencidos(db)
+
+    carta = db.query(Carta).filter(Carta.id == data.carta_id).first()
+    if not carta:
+        raise HTTPException(status_code=404, detail="Carta no encontrada")
+
+    if carta.disponibilidad not in [DisponibilidadEnum.FISICA, DisponibilidadEnum.AMBAS]:
+        raise HTTPException(
+            status_code=400,
+            detail="La carta no está disponible para préstamo físico"
+        )
+
+    usuario = db.query(Usuario).filter(Usuario.id == data.usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    if not usuario.activo:
+        raise HTTPException(status_code=400, detail="El usuario está inactivo")
+
+    prestamo_activo = db.query(Prestamo).filter(
+        Prestamo.carta_id == data.carta_id,
+        Prestamo.estado.in_([
+            EstadoPrestamoEnum.SOLICITADO,
+            EstadoPrestamoEnum.APROBADO,
+            EstadoPrestamoEnum.ENTREGADO,
+        ])
+    ).first()
+
+    if prestamo_activo:
+        raise HTTPException(
+            status_code=400,
+            detail="Esta carta ya tiene un préstamo activo"
+        )
+
+    ahora = datetime.now(timezone.utc)
+    prestamo = Prestamo(
+        usuario_id=data.usuario_id,
+        carta_id=data.carta_id,
+        estado=EstadoPrestamoEnum.ENTREGADO,
+        fecha_aprobacion=ahora,
+        fecha_entrega=ahora,
+        fecha_limite=data.fecha_limite,
+        notas_admin=data.notas_admin,
+    )
+
+    db.add(prestamo)
+    db.commit()
+    db.refresh(prestamo)
+    return prestamo
+
+
 # Listar préstamos
 @router.get("/", response_model=List[PrestamoRead])
 def list_prestamos(
@@ -114,12 +180,11 @@ def list_prestamos(
 
     query = db.query(Prestamo)
 
-    # Non-admin users only see their own
-    if current_user.tipo_usuario != "ADMIN":
+    # El personal (ADMIN/MAESTRO) ve todos; el resto solo los suyos
+    if current_user.tipo_usuario not in STAFF_ROLES:
         query = query.filter(Prestamo.usuario_id == current_user.id)
-    else:
-        if usuario_id:
-            query = query.filter(Prestamo.usuario_id == usuario_id)
+    elif usuario_id:
+        query = query.filter(Prestamo.usuario_id == usuario_id)
 
     if estado:
         query = query.filter(Prestamo.estado == estado)
@@ -145,8 +210,8 @@ def get_prestamo(
     if not prestamo:
         raise HTTPException(status_code=404, detail="Préstamo no encontrado")
 
-    # Non-admin can only see their own
-    if current_user.tipo_usuario != "ADMIN" and prestamo.usuario_id != current_user.id:
+    # El personal ve cualquiera; el resto solo los suyos
+    if current_user.tipo_usuario not in STAFF_ROLES and prestamo.usuario_id != current_user.id:
         raise HTTPException(status_code=403, detail="Sin permiso")
 
     return prestamo
@@ -158,7 +223,7 @@ def aprobar_prestamo(
     prestamo_id: UUID,
     data: PrestamoAprobar,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user),
+    current_admin: Usuario = Depends(get_current_admin_or_maestro),
 ):
     """CU-09: Admin aprueba una solicitud de préstamo."""
     prestamo = db.query(Prestamo).filter(Prestamo.id == prestamo_id).first()
@@ -184,7 +249,7 @@ def rechazar_prestamo(
     prestamo_id: UUID,
     data: PrestamoRechazar,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user),
+    current_admin: Usuario = Depends(get_current_admin_or_maestro),
 ):
     """CU-09: Admin rechaza una solicitud de préstamo."""
     prestamo = db.query(Prestamo).filter(Prestamo.id == prestamo_id).first()
@@ -208,7 +273,7 @@ def entregar_prestamo(
     prestamo_id: UUID,
     data: PrestamoEntregar,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user),
+    current_admin: Usuario = Depends(get_current_admin_or_maestro),
 ):
     """CU-09: Admin registra la entrega física del material."""
     prestamo = db.query(Prestamo).filter(Prestamo.id == prestamo_id).first()
@@ -234,7 +299,7 @@ def devolver_prestamo(
     prestamo_id: UUID,
     data: PrestamoDevolver,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user),
+    current_admin: Usuario = Depends(get_current_admin_or_maestro),
 ):
     """CU-10: Admin registra devolución con evaluación del estado físico."""
     prestamo = db.query(Prestamo).filter(Prestamo.id == prestamo_id).first()

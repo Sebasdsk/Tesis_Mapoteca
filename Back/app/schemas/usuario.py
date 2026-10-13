@@ -66,6 +66,17 @@ class UsuarioCreateResponse(UsuarioRead):
     password_temporal: str = Field(..., description="Contraseña temporal (mostrar solo una vez)")
 
 
+# Schema ligero para búsqueda/selección de usuarios (préstamo directo)
+class UsuarioLookup(BaseModel):
+    """Datos mínimos de un usuario para seleccionarlo en la UI"""
+    id: UUID
+    nombre_completo: str
+    tipo_usuario: TipoUsuarioEnum
+    numero_identificacion: Optional[str]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # Schema for password change
 class PasswordChange(BaseModel):
     """Schema for changing password"""
