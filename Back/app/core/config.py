@@ -62,6 +62,24 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
 
     @property
+    def cors_origin_regex(self) -> "str | None":
+        """
+        En desarrollo, permite cualquier origen local (localhost, 127.0.0.1
+        o IP privada) en cualquier puerto. En producción es None: solo aplica
+        ALLOWED_ORIGINS (estricto).
+        """
+        if self.is_production:
+            return None
+        return (
+            r"^https?://("
+            r"localhost|127\.0\.0\.1|"
+            r"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
+            r"172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|"
+            r"192\.168\.\d{1,3}\.\d{1,3}"
+            r")(:\d+)?$"
+        )
+
+    @property
     def cookie_secure(self) -> bool:
         """Secure en producción salvo que se fuerce explícitamente"""
         if self.COOKIE_SECURE is not None:
