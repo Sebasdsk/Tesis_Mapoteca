@@ -33,10 +33,9 @@ Los builds siguientes ya no necesitan `--build` (queda en caché): usa solo `doc
 ## Flujo diario
 
 ```bash
-docker compose up        # levantar (Ctrl+C para detener)
-docker compose up -d     # levantar en segundo plano
+docker compose up        # levantar en primer plano (Ctrl+C detiene y muestra logs en vivo)
+docker compose up -d     # levantar en segundo plano (sin logs en pantalla)
 docker compose down      # apagar (la BD conserva sus datos)
-docker compose logs -f back    # ver logs del back en vivo (también: db, front)
 ```
 
 **Editar código recarga solo** — no reinicies nada:
@@ -44,11 +43,31 @@ docker compose logs -f back    # ver logs del back en vivo (también: db, front)
 - `Back/**` → uvicorn recarga automáticamente
 - `Front/src/**` → Angular recompila y refresca el navegador
 
+### Ver logs (monitoreo)
+
+Si levantaste con `-d`, o quieres seguir la actividad en otra terminal:
+
+```bash
+docker compose logs -f                 # seguir TODOS los servicios (db + back + front)
+docker compose logs -f back            # solo el backend
+docker compose logs -f front           # solo el frontend
+docker compose logs -f --tail=100 back # últimas 100 líneas + en vivo
+docker compose logs -t --tail=50       # con timestamps
+docker compose logs --since=10m back   # últimos 10 minutos
+docker compose logs --no-log-prefix -f back   # sin el prefijo del nombre del contenedor
+```
+
+- Para **salir** de `logs -f`: `Ctrl+C` (no detiene los contenedores, solo deja de seguir).
+- Si arrancaste con `docker compose up` (primer plano), ya ves los logs en vivo; para
+  dejarlo corriendo sin verlos: `Ctrl+P` luego `Ctrl+Q` (detach).
+- El backend en dev corre con `DEBUG=true`, así que imprime cada query SQL. En
+  producción (`DEBUG=false`) solo salen líneas `INFO` de request, sin SQL.
+
 Solo hay dos casos especiales:
 
 | Caso | Qué hacer |
 |---|---|
-| Agregaste/quitaste dependencias (`requirements.txt` o `package.json`) | `docker compose down && docker compose up --build` |
+| Agregaste/quitaste dependencias (`requirements.txt` o `package.json`) | `docker compose down && docker compose up --build -V` (el `-V` recrea el volumen anónimo de `node_modules` del front) |
 | Creaste o cambiaste un modelo de SQLAlchemy | `docker compose exec back alembic revision --autogenerate -m "descripcion"` y reinicia el back (al arrancar aplica solo el `upgrade head`) |
 
 ## Comandos útiles
@@ -76,4 +95,5 @@ docker compose down -v                         # ⚠️ RESET TOTAL: borra la BD
 | `port is already allocated` (4200/8000/5432) | Otro proceso usa el puerto: `docker compose down`, o mata el proceso local (ej. Postgres local: `sudo systemctl stop postgresql`) |
 | El back falla en migraciones tras cambios raros de esquema | `docker compose down -v && docker compose up` (reset de BD) |
 | El front no recarga al editar | Agregar `--poll 2000` al comando de `ng serve` en `Front/Dockerfile` y rebuild |
-| Cambiaste `package.json` y el front no ve la dep nueva | `docker compose up --build front` |
+| `ModuleNotFoundError: No module named 'X'` en el back | Cambió `requirements.txt`: `docker compose up --build back` |
+| `Cannot find module 'X'` al compilar el front | Cambió `package.json`: `docker compose down && docker compose up --build -V` (recrea `node_modules`) |
