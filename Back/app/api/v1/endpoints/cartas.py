@@ -51,7 +51,7 @@ def create_carta(
         )
     
     # Create new carta
-    new_carta = Carta(**carta_data.dict())
+    new_carta = Carta(**carta_data.model_dump())
     
     db.add(new_carta)
     db.commit()
@@ -202,7 +202,7 @@ def update_carta(
         )
     
     # Update fields
-    update_data = carta_data.dict(exclude_unset=True)
+    update_data = carta_data.model_dump(exclude_unset=True)
     
     for field, value in update_data.items():
         setattr(carta, field, value)
@@ -304,7 +304,20 @@ def delete_carta(
             detail="No se puede eliminar la carta porque tiene un préstamo activo o pendiente. "
                    "Considére darla de baja en su lugar."
         )
-    
+
+    # Historial: préstamos ya finalizados o consultas referencian la carta (FK).
+    tiene_historial = db.query(Prestamo).filter(Prestamo.carta_id == carta_id).first()
+    tiene_consultas = db.query(ConsultaCatalogo).filter(
+        ConsultaCatalogo.carta_id == carta_id
+    ).first()
+
+    if tiene_historial or tiene_consultas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede eliminar la carta porque tiene historial de préstamos o consultas. "
+                   "Considére darla de baja en su lugar."
+        )
+
     nomenclatura = carta.nomenclatura
     nombre = carta.nombre
     
@@ -466,6 +479,7 @@ async def carga_masiva_cartas(
     resultados = []
     exitosas = 0
     errores_count = 0
+    nomenclaturas_exitosas = set()
     
     tipos_validos = {e.value: e for e in TipoCartaEnum}
     disponibilidad_validos = {e.value: e for e in DisponibilidadEnum}
@@ -538,8 +552,7 @@ async def carga_masiva_cartas(
             continue
         
         # Check duplicate within this CSV batch
-        nomenclaturas_procesadas = [r.nomenclatura for r in resultados if r.exito]
-        if nomenclatura in nomenclaturas_procesadas:
+        if nomenclatura in nomenclaturas_exitosas:
             errores_count += 1
             resultados.append(CargaMasivaResultRow(
                 fila=i, nomenclatura=nomenclatura, nombre=nombre, exito=False,
@@ -591,16 +604,17 @@ async def carga_masiva_cartas(
                 disponibilidad=disponibilidad,
                 notas=get_val('notas') or None,
             )
-            db.add(carta)
-            db.flush()
-            
+            # Savepoint por fila: si esta falla, las anteriores se conservan.
+            with db.begin_nested():
+                db.add(carta)
+                db.flush()
+            nomenclaturas_exitosas.add(nomenclatura)
             exitosas += 1
             resultados.append(CargaMasivaResultRow(
                 fila=i, nomenclatura=nomenclatura, nombre=nombre, exito=True,
                 mensaje='Carta registrada exitosamente'
             ))
         except Exception as e:
-            db.rollback()
             errores_count += 1
             resultados.append(CargaMasivaResultRow(
                 fila=i, nomenclatura=nomenclatura, nombre=nombre, exito=False,
