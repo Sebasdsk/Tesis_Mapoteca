@@ -1,7 +1,7 @@
 """
 Usuario Pydantic schemas for request/response validation
 """
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, validator
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -56,9 +56,8 @@ class UsuarioRead(UsuarioBase):
     debe_cambiar_password: bool
     created_at: datetime
     updated_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Schema for user with password (only shown once after creation)

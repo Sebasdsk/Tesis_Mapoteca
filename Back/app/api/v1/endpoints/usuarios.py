@@ -65,9 +65,11 @@ def create_usuario(
     db.refresh(new_user)
     
     # Return user with temporary password
-    response = UsuarioCreateResponse.from_orm(new_user)
-    response.password_temporal = temp_password
-    
+    response = UsuarioCreateResponse(
+        **UsuarioRead.model_validate(new_user).model_dump(),
+        password_temporal=temp_password,
+    )
+
     return response
 
 
@@ -146,7 +148,7 @@ def update_usuario(
         )
     
     # Update fields
-    update_data = usuario_data.dict(exclude_unset=True)
+    update_data = usuario_data.model_dump(exclude_unset=True)
     
     for field, value in update_data.items():
         setattr(usuario, field, value)

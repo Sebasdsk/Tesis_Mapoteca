@@ -1,7 +1,7 @@
 """
 Carta Pydantic schemas for request/response validation
 """
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, validator
 from typing import Optional, Dict, Any
 from datetime import date, datetime
 from decimal import Decimal
@@ -90,9 +90,8 @@ class CartaRead(CartaBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Schema for lista simple (usado en búsquedas)
@@ -105,9 +104,8 @@ class CartaSimple(BaseModel):
     tipo_carta: TipoCartaEnum
     estado_republica: Optional[str]
     disponibilidad: DisponibilidadEnum
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Schema for baja de carta

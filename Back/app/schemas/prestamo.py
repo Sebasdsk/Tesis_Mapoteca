@@ -1,7 +1,7 @@
 """
 Prestamo Pydantic schemas for request/response validation
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import date, datetime
 from uuid import UUID
@@ -48,8 +48,7 @@ class CartaEnPrestamo(BaseModel):
     nombre: str
     escala: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UsuarioEnPrestamo(BaseModel):
@@ -59,8 +58,7 @@ class UsuarioEnPrestamo(BaseModel):
     tipo_usuario: str
     numero_identificacion: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PrestamoRead(BaseModel):
@@ -84,5 +82,4 @@ class PrestamoRead(BaseModel):
     usuario: UsuarioEnPrestamo
     carta: CartaEnPrestamo
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

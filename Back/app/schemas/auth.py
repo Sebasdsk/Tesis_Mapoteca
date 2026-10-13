@@ -1,7 +1,7 @@
 """
 Authentication Pydantic schemas
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from uuid import UUID
 from app.models.usuario import TipoUsuarioEnum
@@ -22,9 +22,8 @@ class TokenUser(BaseModel):
     nombre_completo: str
     email: Optional[str]
     debe_cambiar_password: bool
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Schema for token response
