@@ -4,7 +4,8 @@ Security utilities: JWT tokens and password hashing
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 from passlib.context import CryptContext
 from app.core.config import settings
 
@@ -80,7 +81,7 @@ def decode_token(token: str) -> Optional[dict]:
     """
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-    except JWTError:
+    except PyJWTError:
         return None
 
 

@@ -1,0 +1,7 @@
+# Dependencias de desarrollo/test (no se instalan en la imagen de producción)
+-r requirements.txt
+
+# Testing
+pytest
+pytest-asyncio
+httpx>=0.28
