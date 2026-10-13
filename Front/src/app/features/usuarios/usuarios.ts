@@ -7,6 +7,7 @@ import {
   UsuarioCreate,
   UsuarioUpdate,
 } from '../../core/service/usuario';
+import { ToastService } from '../../core/service/toast';
 
 @Component({
   selector: 'app-usuarios',
@@ -17,6 +18,7 @@ import {
 })
 export default class UsuariosComponent implements OnInit {
   private usuarioService = inject(UsuarioService);
+  private toast = inject(ToastService);
 
   usuarios = signal<Usuario[]>([]);
   isLoading = signal(true);
@@ -113,6 +115,7 @@ export default class UsuariosComponent implements OnInit {
         next: () => {
           this.formLoading.set(false);
           this.showModal.set(false);
+          this.toast.success('Usuario actualizado correctamente');
           this.loadUsuarios();
         },
         error: (err) => {
@@ -135,6 +138,7 @@ export default class UsuariosComponent implements OnInit {
           this.tempPassword.set(res.password_temporal);
           this.tempPasswordUser.set(res.nombre_completo);
           this.showPasswordModal.set(true);
+          this.toast.success('Usuario creado correctamente');
           this.loadUsuarios();
         },
         error: (err) => {
@@ -152,7 +156,10 @@ export default class UsuariosComponent implements OnInit {
       this.confirmMessage.set(`¿Desactivar a ${user.nombre_completo}?`);
       this.confirmAction.set(() => {
         this.usuarioService.deactivateUsuario(user.id).subscribe({
-          next: () => this.loadUsuarios(),
+          next: () => {
+            this.toast.success('Usuario desactivado');
+            this.loadUsuarios();
+          },
           error: (err) => this.errorMessage.set(err.error?.detail || 'Error'),
         });
       });
@@ -160,7 +167,10 @@ export default class UsuariosComponent implements OnInit {
       this.confirmMessage.set(`¿Reactivar a ${user.nombre_completo}?`);
       this.confirmAction.set(() => {
         this.usuarioService.activateUsuario(user.id).subscribe({
-          next: () => this.loadUsuarios(),
+          next: () => {
+            this.toast.success('Usuario reactivado');
+            this.loadUsuarios();
+          },
           error: (err) => this.errorMessage.set(err.error?.detail || 'Error'),
         });
       });

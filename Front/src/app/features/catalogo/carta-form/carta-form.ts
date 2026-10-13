@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CartaService } from '../../../core/service/carta';
+import { ToastService } from '../../../core/service/toast';
 import { Carta } from '../../../core/models/carta';
 
 @Component({
@@ -15,6 +16,7 @@ export default class CartaFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private cartaService = inject(CartaService);
+  private toast = inject(ToastService);
 
   isEditing = signal(false);
   isLoading = signal(false);
@@ -114,6 +116,7 @@ export default class CartaFormComponent implements OnInit {
       this.cartaService.updateCarta(this.editId, data).subscribe({
         next: () => {
           this.isSaving.set(false);
+          this.toast.success('Carta actualizada correctamente');
           this.router.navigate(['/catalogo', this.editId]);
         },
         error: (err) => {
@@ -125,6 +128,7 @@ export default class CartaFormComponent implements OnInit {
       this.cartaService.createCarta(data).subscribe({
         next: (created) => {
           this.isSaving.set(false);
+          this.toast.success('Carta registrada correctamente');
           this.router.navigate(['/catalogo', created.id]);
         },
         error: (err) => {

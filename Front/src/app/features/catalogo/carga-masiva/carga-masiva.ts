@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { CartaService } from '../../../core/service/carta';
+import { ToastService } from '../../../core/service/toast';
 
 interface ResultRow {
   fila: number;
@@ -27,6 +28,7 @@ interface CargaResult {
 })
 export default class CargaMasivaComponent {
   private cartaService = inject(CartaService);
+  private toast = inject(ToastService);
 
   selectedFile = signal<File | null>(null);
   isDragging = signal(false);
@@ -90,6 +92,12 @@ export default class CargaMasivaComponent {
       next: (res: CargaResult) => {
         this.result.set(res);
         this.isUploading.set(false);
+        if (res.exitosas > 0) {
+          const extra = res.errores > 0 ? `, ${res.errores} con error` : '';
+          this.toast.success(`${res.exitosas} carta(s) cargada(s)${extra}`);
+        } else {
+          this.toast.error('No se pudo cargar ninguna carta. Revisa el detalle.');
+        }
       },
       error: (err) => {
         this.errorMessage.set(

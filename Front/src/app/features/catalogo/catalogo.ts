@@ -32,6 +32,7 @@ export default class CatalogoComponent implements OnInit, OnDestroy {
   // Paginación
   currentPage = signal(0);
   pageSize = 12;
+  total = signal(0);
   hasMore = signal(false);
 
   // Catálogos para filtros
@@ -53,11 +54,7 @@ export default class CatalogoComponent implements OnInit, OnDestroy {
     { value: 'DANADA', label: 'Dañada' },
   ];
 
-  escalas = [
-    { value: '1:50,000', label: '1:50,000' },
-    { value: '1:250,000', label: '1:250,000' },
-    { value: '1:1,000,000', label: '1:1,000,000' },
-  ];
+  escalas: string[] = [];
 
   ngOnInit() {
     // Debounce de búsqueda
@@ -70,6 +67,10 @@ export default class CatalogoComponent implements OnInit, OnDestroy {
       });
 
     this.loadCartas();
+    this.cartaService.getEscalas().subscribe({
+      next: (escalas) => (this.escalas = escalas),
+      error: () => {},
+    });
   }
 
   ngOnDestroy() {
@@ -148,7 +149,7 @@ export default class CatalogoComponent implements OnInit, OnDestroy {
 
     const filters: CartaFilters = {
       skip: this.currentPage() * this.pageSize,
-      limit: this.pageSize + 1, // +1 to detect if there are more
+      limit: this.pageSize,
     };
 
     if (this.searchTerm) filters.search = this.searchTerm;
@@ -157,14 +158,10 @@ export default class CatalogoComponent implements OnInit, OnDestroy {
     if (this.escalaFilter) filters.escala = this.escalaFilter;
 
     this.cartaService.getCartas(filters).subscribe({
-      next: (data) => {
-        if (data.length > this.pageSize) {
-          this.hasMore.set(true);
-          this.cartas.set(data.slice(0, this.pageSize));
-        } else {
-          this.hasMore.set(false);
-          this.cartas.set(data);
-        }
+      next: ({ items, total }) => {
+        this.cartas.set(items);
+        this.total.set(total);
+        this.hasMore.set(this.currentPage() * this.pageSize + items.length < total);
         this.isLoading.set(false);
       },
       error: (err) => {

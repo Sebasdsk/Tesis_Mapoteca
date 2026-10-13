@@ -4,6 +4,7 @@ import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { PrestamoService } from '../../core/service/prestamo';
 import { AuthService } from '../../core/service/auth';
+import { ToastService } from '../../core/service/toast';
 import {
   Prestamo,
   EstadoPrestamo,
@@ -21,6 +22,7 @@ import {
 export default class PrestamosComponent implements OnInit {
   private prestamoService = inject(PrestamoService);
   authService = inject(AuthService);
+  private toast = inject(ToastService);
 
   prestamos = signal<Prestamo[]>([]);
   isLoading = signal(true);
@@ -33,6 +35,7 @@ export default class PrestamosComponent implements OnInit {
   // Paginación
   currentPage = signal(0);
   pageSize = 20;
+  total = signal(0);
   hasMore = signal(false);
 
   // --- Modales ---
@@ -320,8 +323,7 @@ export default class PrestamosComponent implements OnInit {
   // --- Utils ---
 
   private showSuccess(msg: string) {
-    this.successMessage.set(msg);
-    setTimeout(() => this.successMessage.set(''), 4000);
+    this.toast.success(msg);
   }
 
   private loadPrestamos() {
@@ -330,7 +332,7 @@ export default class PrestamosComponent implements OnInit {
 
     const filters: PrestamoFilters = {
       skip: this.currentPage() * this.pageSize,
-      limit: this.pageSize + 1,
+      limit: this.pageSize,
     };
 
     if (this.estadoFilter) {
@@ -338,14 +340,10 @@ export default class PrestamosComponent implements OnInit {
     }
 
     this.prestamoService.getPrestamos(filters).subscribe({
-      next: (data) => {
-        if (data.length > this.pageSize) {
-          this.hasMore.set(true);
-          this.prestamos.set(data.slice(0, this.pageSize));
-        } else {
-          this.hasMore.set(false);
-          this.prestamos.set(data);
-        }
+      next: ({ items, total }) => {
+        this.prestamos.set(items);
+        this.total.set(total);
+        this.hasMore.set(this.currentPage() * this.pageSize + items.length < total);
         this.isLoading.set(false);
       },
       error: (err) => {

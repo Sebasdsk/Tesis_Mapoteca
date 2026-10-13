@@ -5,6 +5,7 @@ import { NgClass } from '@angular/common';
 import { CartaService } from '../../../core/service/carta';
 import { PrestamoService } from '../../../core/service/prestamo';
 import { AuthService } from '../../../core/service/auth';
+import { ToastService } from '../../../core/service/toast';
 import { Carta } from '../../../core/models/carta';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -24,6 +25,7 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
   private prestamoService = inject(PrestamoService);
   private http = inject(HttpClient);
   authService = inject(AuthService);
+  private toast = inject(ToastService);
 
   carta = signal<Carta | null>(null);
   isLoading = signal(true);
@@ -231,6 +233,7 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
         this.prestamoLoading.set(false);
         this.showPrestamoModal.set(false);
         this.prestamoSuccess.set('¡Solicitud enviada! El administrador revisará tu petición.');
+        this.toast.success('Solicitud de préstamo enviada');
         setTimeout(() => this.prestamoSuccess.set(''), 5000);
       },
       error: (err) => {

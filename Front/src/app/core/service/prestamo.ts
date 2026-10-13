@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   Prestamo,
   PrestamoSolicitar,
@@ -10,6 +11,7 @@ import {
   PrestamoDevolver,
   PrestamoFilters,
 } from '../models/prestamo';
+import { Paginated } from './carta';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -20,8 +22,9 @@ export class PrestamoService {
   /**
    * GET /prestamos — Lista con filtros opcionales.
    * Admin ve todos, usuarios normales solo los suyos.
+   * El total (sin paginar) llega en el header X-Total-Count.
    */
-  getPrestamos(filters: PrestamoFilters = {}): Observable<Prestamo[]> {
+  getPrestamos(filters: PrestamoFilters = {}): Observable<Paginated<Prestamo>> {
     let params = new HttpParams();
 
     if (filters.estado) params = params.set('estado', filters.estado);
@@ -30,7 +33,14 @@ export class PrestamoService {
     if (filters.skip != null) params = params.set('skip', filters.skip.toString());
     if (filters.limit != null) params = params.set('limit', filters.limit.toString());
 
-    return this.http.get<Prestamo[]>(this.apiUrl, { params });
+    return this.http
+      .get<Prestamo[]>(this.apiUrl, { params, observe: 'response' })
+      .pipe(
+        map((res) => ({
+          items: res.body ?? [],
+          total: Number(res.headers.get('X-Total-Count') ?? res.body?.length ?? 0),
+        }))
+      );
   }
 
   /**

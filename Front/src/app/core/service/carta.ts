@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Carta, CartaSimple } from '../models/carta';
 import { environment } from '../../../environments/environment';
 
@@ -14,6 +15,11 @@ export interface CartaFilters {
   limit?: number;
 }
 
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CartaService {
   private http = inject(HttpClient);
@@ -21,8 +27,9 @@ export class CartaService {
 
   /**
    * GET /cartas — Lista con filtros opcionales
+   * El total (sin paginar) llega en el header X-Total-Count.
    */
-  getCartas(filters: CartaFilters = {}): Observable<CartaSimple[]> {
+  getCartas(filters: CartaFilters = {}): Observable<Paginated<CartaSimple>> {
     let params = new HttpParams();
 
     if (filters.search) params = params.set('search', filters.search);
@@ -33,7 +40,21 @@ export class CartaService {
     if (filters.skip != null) params = params.set('skip', filters.skip.toString());
     if (filters.limit != null) params = params.set('limit', filters.limit.toString());
 
-    return this.http.get<CartaSimple[]>(this.apiUrl, { params });
+    return this.http
+      .get<CartaSimple[]>(this.apiUrl, { params, observe: 'response' })
+      .pipe(
+        map((res) => ({
+          items: res.body ?? [],
+          total: Number(res.headers.get('X-Total-Count') ?? res.body?.length ?? 0),
+        }))
+      );
+  }
+
+  /**
+   * GET /cartas/escalas — Escalas distintas para filtros dinámicos
+   */
+  getEscalas(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/escalas`);
   }
 
   /**

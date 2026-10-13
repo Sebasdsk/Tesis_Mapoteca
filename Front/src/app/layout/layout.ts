@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../core/service/auth';
+import ToastComponent from '../shared/toast/toast';
 
 interface NavItem {
   icon: string;
@@ -13,7 +14,7 @@ interface NavItem {
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ToastComponent],
   templateUrl: './layout.html',
   styleUrl: './layout.css',
 })
