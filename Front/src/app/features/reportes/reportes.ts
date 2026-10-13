@@ -1,5 +1,7 @@
-import { Component, inject, signal, OnInit, ElementRef, viewChild, AfterViewInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy, ElementRef, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
+import Chart from 'chart.js/auto';
 import { ReporteService } from '../../core/service/reporte';
 import {
   ReporteGeneral,
@@ -9,9 +11,6 @@ import {
   ActividadMensual,
 } from '../../core/models/reporte';
 
-// Declare Chart.js global (loaded from CDN)
-declare const Chart: any;
-
 @Component({
   selector: 'app-reportes',
   standalone: true,
@@ -19,7 +18,7 @@ declare const Chart: any;
   templateUrl: './reportes.html',
   styleUrl: './reportes.css',
 })
-export default class ReportesComponent implements OnInit {
+export default class ReportesComponent implements OnInit, OnDestroy {
   private reporteService = inject(ReporteService);
 
   isLoading = signal(true);
@@ -37,12 +36,18 @@ export default class ReportesComponent implements OnInit {
   donutCanvas = viewChild<ElementRef>('donutChart');
   lineCanvas = viewChild<ElementRef>('lineChart');
 
-  private barChartInstance: any = null;
-  private donutChartInstance: any = null;
-  private lineChartInstance: any = null;
+  private barChartInstance: Chart | null = null;
+  private donutChartInstance: Chart | null = null;
+  private lineChartInstance: Chart | null = null;
 
   ngOnInit() {
     this.loadData();
+  }
+
+  ngOnDestroy() {
+    this.barChartInstance?.destroy();
+    this.donutChartInstance?.destroy();
+    this.lineChartInstance?.destroy();
   }
 
   loadData() {
@@ -50,12 +55,12 @@ export default class ReportesComponent implements OnInit {
     this.errorMessage.set('');
 
     Promise.all([
-      this.reporteService.getReporteGeneral().toPromise(),
-      this.reporteService.getCartasMasBuscadas(5).toPromise(),
-      this.reporteService.getCartasMasPrestadas(5).toPromise(),
-      this.reporteService.getPrestamosVencidos().toPromise(),
-      this.reporteService.getDistribucionUsuarios().toPromise(),
-      this.reporteService.getActividadMensual(12).toPromise(),
+      firstValueFrom(this.reporteService.getReporteGeneral()),
+      firstValueFrom(this.reporteService.getCartasMasBuscadas(5)),
+      firstValueFrom(this.reporteService.getCartasMasPrestadas(5)),
+      firstValueFrom(this.reporteService.getPrestamosVencidos()),
+      firstValueFrom(this.reporteService.getDistribucionUsuarios()),
+      firstValueFrom(this.reporteService.getActividadMensual(12)),
     ])
       .then(([resumenRes, buscadasRes, prestadasRes, vencidosRes, distRes, actRes]) => {
         this.resumen.set(resumenRes || null);
@@ -78,7 +83,6 @@ export default class ReportesComponent implements OnInit {
   }
 
   private renderCharts() {
-    if (typeof Chart === 'undefined') return;
     this.renderBarChart();
     this.renderDonutChart();
     this.renderLineChart();
