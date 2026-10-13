@@ -80,7 +80,7 @@ class UsuarioLookup(BaseModel):
 # Schema for password change
 class PasswordChange(BaseModel):
     """Schema for changing password"""
-    current_password: str = Field(..., min_length=1)
+    current_password: Optional[str] = Field(None, min_length=1)
     new_password: str = Field(..., min_length=8, max_length=100)
     confirm_password: str = Field(..., min_length=8, max_length=100)
     

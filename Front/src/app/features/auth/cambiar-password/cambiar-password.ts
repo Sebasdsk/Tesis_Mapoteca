@@ -19,9 +19,12 @@ export default class CambiarPasswordComponent {
   errorMessage = signal('');
   successMessage = signal('');
 
+  // En el primer login (cambio obligatorio) no se pide la contraseña actual.
+  readonly requiresCurrent = !this.authService.mustChangePassword();
+
   passwordForm = this.fb.nonNullable.group(
     {
-      current_password: ['', [Validators.required]],
+      current_password: ['', this.requiresCurrent ? [Validators.required] : []],
       new_password: ['', [Validators.required, Validators.minLength(8), this.passwordStrength]],
       confirm_password: ['', [Validators.required]],
     },
@@ -78,9 +81,14 @@ export default class CambiarPasswordComponent {
     this.errorMessage.set('');
     this.successMessage.set('');
 
-    const formData = this.passwordForm.getRawValue();
+    const raw = this.passwordForm.getRawValue();
+    const payload = {
+      new_password: raw.new_password,
+      confirm_password: raw.confirm_password,
+      ...(this.requiresCurrent ? { current_password: raw.current_password } : {}),
+    };
 
-    this.authService.changePassword(formData).subscribe({
+    this.authService.changePassword(payload).subscribe({
       next: () => {
         this.isLoading.set(false);
         this.successMessage.set('¡Contraseña actualizada correctamente!');

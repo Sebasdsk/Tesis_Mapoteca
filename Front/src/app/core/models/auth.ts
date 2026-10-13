@@ -34,9 +34,10 @@ export interface LoginResponse {
 
 /**
  * Request para cambio de contraseña
+ * current_password solo es obligatorio en cambios voluntarios (no en el primer login).
  */
 export interface PasswordChangeRequest {
-  current_password: string;
+  current_password?: string;
   new_password: string;
   confirm_password: string;
 }

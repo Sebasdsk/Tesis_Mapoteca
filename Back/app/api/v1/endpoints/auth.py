@@ -175,8 +175,22 @@ def change_password(
 
     Allow user to change their password.
     Required on first login (debe_cambiar_password = True).
+
+    En el cambio obligatorio (primer login) no se exige la contraseña actual:
+    el usuario acaba de autenticarse con ella. En un cambio voluntario
+    (debe_cambiar_password = False) sí se exige y se verifica.
     """
-    if not verify_password(password_data.current_password, current_user.password_hash):
+    if not current_user.debe_cambiar_password:
+        if not password_data.current_password or not verify_password(
+            password_data.current_password, current_user.password_hash
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La contraseña actual es incorrecta"
+            )
+    elif password_data.current_password and not verify_password(
+        password_data.current_password, current_user.password_hash
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contraseña actual es incorrecta"
