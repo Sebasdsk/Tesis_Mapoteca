@@ -36,6 +36,10 @@ de sesión funcione como first-party y elimina CORS.
    | `ADMIN_USERNAME` | usuario admin deseado |
    | `ADMIN_EMAIL` | email admin |
    | `ADMIN_PASSWORD` | contraseña fuerte (no la default) |
+   | `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` (opcional) |
+   | `REFRESH_TOKEN_EXPIRE_DAYS` | `7` (opcional) |
+   | `COOKIE_SECURE` | se deriva a `true` en producción; forzar solo si hace falta |
+   | `COOKIE_SAMESITE` | `lax` (por el proxy same-origin) |
 
    Con `ENVIRONMENT=production`, el arranque **falla** si `SECRET_KEY` es débil o
    `ADMIN_PASSWORD` es la default (fail-fast en `app/core/config.py`).
@@ -61,6 +65,7 @@ de sesión funcione como first-party y elimina CORS.
 
 ## 5. Notas
 
+- `/auth/login` tiene rate limiting (5 intentos/minuto por IP vía `X-Forwarded-For`).
 - Render free se suspende por inactividad (~15 min): usar keep-alive (UptimeRobot)
   o plan pago para evitar cold starts en el login.
 - Si el `Set-Cookie` no atraviesa bien el proxy de Vercel, plan B es dominio
