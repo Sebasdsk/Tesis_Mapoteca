@@ -1,0 +1,54 @@
+# Sistema de Gestión de Mapoteca UAS - stack completo de desarrollo
+# Uso: docker compose up --build (primera vez) | docker compose up (diario)
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mapoteca_db
+    environment:
+      POSTGRES_USER: mapoteca_user
+      POSTGRES_PASSWORD: mapoteca_pass_2024
+      POSTGRES_DB: mapoteca_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mapoteca_user -d mapoteca_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  back:
+    build: ./Back
+    container_name: mapoteca_back
+    environment:
+      DATABASE_URL: postgresql://mapoteca_user:mapoteca_pass_2024@db:5432/mapoteca_db
+      SECRET_KEY: dev-secret-key-cambiar-en-produccion
+      ALLOWED_ORIGINS: http://localhost:4200
+      DEBUG: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Back:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    # Arranque: migraciones -> seed idempotente (admin + cartas de ejemplo) -> API
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m app.db.init_db &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  front:
+    build: ./Front
+    container_name: mapoteca_front
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./Front:/app
+      - /app/node_modules  # evita que el mount de ./Front oculte las deps del contenedor
+    depends_on:
+      - back
+
+volumes:
+  pgdata:
