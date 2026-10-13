@@ -11,6 +11,7 @@ from app.db.base import Base
 from app.models.usuario import Usuario, TipoUsuarioEnum
 from app.models.carta import Carta, TipoCartaEnum, DisponibilidadEnum, TipoCoordenadasEnum
 from app.models.prestamo import Prestamo  # noqa: F401 — needed for table creation
+from app.models.refresh_token import RefreshToken  # noqa: F401 — needed for table creation
 from app.core.security import get_password_hash
 from app.core.config import settings
 from datetime import date
@@ -43,6 +44,13 @@ def init_db(db: Session) -> None:
         print(f"  Password: {settings.ADMIN_PASSWORD}")
         print("  ⚠️  CHANGE THIS PASSWORD IN PRODUCTION!")
     
+    # Datos de ejemplo SOLO en desarrollo. En producción solo se crea el admin.
+    if settings.is_production:
+        db.commit()
+        print("Entorno de producción: se omite la carga de datos de ejemplo.")
+        print(f"Total users: {db.query(Usuario).count()}")
+        return
+
     # Create sample users
     sample_users = [
         {

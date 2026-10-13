@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, passwordChangedGuard } from './core/guards/auth.guard';
+import { authGuard, passwordChangedGuard, adminGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   // Rutas públicas
@@ -49,6 +49,7 @@ export const routes: Routes = [
       {
         path: 'usuarios',
         loadComponent: () => import('./features/usuarios/usuarios'),
+        canActivate: [adminGuard],
       },
 
       // Préstamos
@@ -59,6 +60,7 @@ export const routes: Routes = [
       {
         path: 'reportes',
         loadComponent: () => import('./features/reportes/reportes'),
+        canActivate: [adminGuard],
       },
 
       // Redirect vacío → catálogo

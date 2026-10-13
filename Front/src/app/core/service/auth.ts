@@ -1,8 +1,8 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpBackend, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, throwError } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { Observable, throwError, of } from 'rxjs';
+import { tap, catchError, map } from 'rxjs/operators';
 import {
   LoginRequest,
   LoginResponse,
@@ -12,42 +12,42 @@ import {
 } from '../models/auth';
 import { environment } from '../../../environments/environment';
 
-const TOKEN_KEY = 'mapoteca_token';
-const USER_KEY = 'mapoteca_user';
-
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   private http = inject(HttpClient);
+  private httpBackend = inject(HttpBackend);
   private router = inject(Router);
   private apiUrl = environment.apiUrl;
 
-  // Estado reactivo
-  private _currentUser = signal<TokenUser | null>(this._getUserFromStorage());
-  private _token = signal<string | null>(this._getTokenFromStorage());
+  // Cliente que NO pasa por los interceptores. Se usa para login/refresh/logout
+  // y así evitar recursión (el interceptor reintenta con refresh) y
+  // dependencias circulares de DI.
+  private rawHttp = new HttpClient(this.httpBackend);
 
-  // Selectores públicos (readonly)
+  // Estado reactivo (el access token vive solo en memoria, no en localStorage)
+  private _currentUser = signal<TokenUser | null>(null);
+  private _accessToken = signal<string | null>(null);
+
   public currentUser = this._currentUser.asReadonly();
-  public isLoggedIn = computed(() => !!this._token());
-  public isAdmin = computed(
-    () => this._currentUser()?.tipo_usuario === 'ADMIN'
-  );
+  public isLoggedIn = computed(() => !!this._accessToken());
+  public isAdmin = computed(() => this._currentUser()?.tipo_usuario === 'ADMIN');
   public mustChangePassword = computed(
     () => this._currentUser()?.debe_cambiar_password ?? false
   );
 
   /**
    * POST /auth/login
-   * Autentica al usuario y guarda el token JWT
+   * Guarda el access token en memoria; el refresh token llega en cookie httpOnly.
    */
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http
-      .post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials)
+    return this.rawHttp
+      .post<LoginResponse>(`${this.apiUrl}/auth/login`, credentials, {
+        withCredentials: true,
+      })
       .pipe(
-        tap((response) => {
-          this._saveSession(response.access_token, response.user);
-        }),
+        tap((response) => this._setSession(response)),
         catchError((error: HttpErrorResponse) => {
           const message =
             error.error?.detail || 'Error al iniciar sesión. Intenta de nuevo.';
@@ -57,8 +57,35 @@ export class AuthService {
   }
 
   /**
+   * POST /auth/refresh
+   * Usa la cookie httpOnly para obtener un nuevo access token.
+   */
+  refresh(): Observable<LoginResponse> {
+    return this.rawHttp
+      .post<LoginResponse>(
+        `${this.apiUrl}/auth/refresh`,
+        {},
+        { withCredentials: true }
+      )
+      .pipe(tap((response) => this._setSession(response)));
+  }
+
+  /**
+   * Restaura la sesión al cargar la app (llamado por APP_INITIALIZER).
+   * Si no hay cookie válida, simplemente queda como usuario anónimo.
+   */
+  initialize(): Observable<void> {
+    return this.refresh().pipe(
+      map(() => void 0),
+      catchError(() => {
+        this._clearSession();
+        return of(void 0);
+      })
+    );
+  }
+
+  /**
    * POST /auth/change-password
-   * Cambia la contraseña del usuario actual
    */
   changePassword(
     data: PasswordChangeRequest
@@ -70,15 +97,12 @@ export class AuthService {
       )
       .pipe(
         tap((response) => {
-          // Actualizar el flag debe_cambiar_password en el estado local
           const user = this._currentUser();
           if (user) {
-            const updatedUser: TokenUser = {
+            this._currentUser.set({
               ...user,
               debe_cambiar_password: response.debe_cambiar_password,
-            };
-            this._currentUser.set(updatedUser);
-            localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+            });
           }
         }),
         catchError((error: HttpErrorResponse) => {
@@ -90,56 +114,43 @@ export class AuthService {
   }
 
   /**
-   * GET /auth/me
-   * Obtiene la información del usuario actual
-   */
-  getMe(): Observable<TokenUser> {
-    return this.http.get<TokenUser>(`${this.apiUrl}/auth/me`).pipe(
-      tap((user) => {
-        this._currentUser.set(user);
-        localStorage.setItem(USER_KEY, JSON.stringify(user));
-      })
-    );
-  }
-
-  /**
-   * Cierra sesión: limpia token y usuario del estado y localStorage
+   * POST /auth/logout y limpieza local.
    */
   logout(): void {
-    this._token.set(null);
-    this._currentUser.set(null);
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    this.router.navigate(['/login']);
+    this.rawHttp
+      .post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true })
+      .subscribe({
+        next: () => this._afterLogout(),
+        error: () => this._afterLogout(),
+      });
   }
 
   /**
-   * Retorna el token actual (usado por el interceptor)
+   * Retorna el access token actual (usado por el interceptor).
    */
   getToken(): string | null {
-    return this._token();
+    return this._accessToken();
+  }
+
+  /** Indica si hay sesión activa (token en memoria). */
+  isAuthenticated(): boolean {
+    return !!this._accessToken();
   }
 
   // --- Métodos privados ---
 
-  private _saveSession(token: string, user: TokenUser): void {
-    this._token.set(token);
-    this._currentUser.set(user);
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  private _setSession(response: LoginResponse): void {
+    this._accessToken.set(response.access_token);
+    this._currentUser.set(response.user);
   }
 
-  private _getTokenFromStorage(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+  private _clearSession(): void {
+    this._accessToken.set(null);
+    this._currentUser.set(null);
   }
 
-  private _getUserFromStorage(): TokenUser | null {
-    const userStr = localStorage.getItem(USER_KEY);
-    if (!userStr) return null;
-    try {
-      return JSON.parse(userStr) as TokenUser;
-    } catch {
-      return null;
-    }
+  private _afterLogout(): void {
+    this._clearSession();
+    this.router.navigate(['/login']);
   }
 }

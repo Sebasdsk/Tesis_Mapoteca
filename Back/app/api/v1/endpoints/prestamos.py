@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime, timezone
-from app.core.dependencies import get_db, get_current_admin_user, get_current_user
+from app.core.dependencies import get_db, get_current_admin_user, get_current_active_user
 from app.models.usuario import Usuario
 from app.models.carta import Carta, DisponibilidadEnum
 from app.models.prestamo import Prestamo, EstadoPrestamoEnum
@@ -31,7 +31,7 @@ router = APIRouter()
 def solicitar_prestamo(
     data: PrestamoSolicitar,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
+    current_user: Usuario = Depends(get_current_active_user),
 ):
     """
     CU-08: Un usuario solicita el préstamo de una carta.
@@ -100,7 +100,7 @@ def list_prestamos(
     skip: int = 0,
     limit: int = 50,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
+    current_user: Usuario = Depends(get_current_active_user),
 ):
     """
     Listar préstamos. Admin ve todos, usuarios normales solo los suyos.
@@ -129,7 +129,7 @@ def list_prestamos(
 def get_prestamo(
     prestamo_id: UUID,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
+    current_user: Usuario = Depends(get_current_active_user),
 ):
     prestamo = db.query(Prestamo).filter(Prestamo.id == prestamo_id).first()
     if not prestamo:

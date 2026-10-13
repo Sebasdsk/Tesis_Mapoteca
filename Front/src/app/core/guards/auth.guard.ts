@@ -34,3 +34,24 @@ export const passwordChangedGuard: CanActivateFn = () => {
 
   return true;
 };
+
+/**
+ * Guard que restringe el acceso a rutas de administrador.
+ * Redirige a /login si no hay sesión y a /catalogo si no es ADMIN.
+ */
+export const adminGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (!authService.isLoggedIn()) {
+    router.navigate(['/login']);
+    return false;
+  }
+
+  if (!authService.isAdmin()) {
+    router.navigate(['/catalogo']);
+    return false;
+  }
+
+  return true;
+};

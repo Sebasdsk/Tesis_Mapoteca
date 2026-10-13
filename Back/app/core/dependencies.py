@@ -76,44 +76,13 @@ def get_current_user(
     return user
 
 
-def get_current_admin_user(
-    current_user: Usuario = Depends(get_current_user)
-) -> Usuario:
-    """
-    Dependency to get current user and verify it's an admin
-    
-    Args:
-        current_user: Current authenticated user
-    
-    Returns:
-        Current admin user
-    
-    Raises:
-        HTTPException: If user is not an admin
-    """
-    if current_user.tipo_usuario != "ADMIN":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permisos de administrador"
-        )
-    
-    return current_user
-
-
 def get_current_active_user(
     current_user: Usuario = Depends(get_current_user)
 ) -> Usuario:
     """
-    Dependency to get current active user (not requiring password change)
-    
-    Args:
-        current_user: Current authenticated user
-    
-    Returns:
-        Current active user
-    
-    Raises:
-        HTTPException: If user must change password
+    Dependency to get current active user (not requiring password change).
+
+    Bloquea a los usuarios que deben cambiar su contraseña antes de operar.
     """
     if current_user.debe_cambiar_password:
         raise HTTPException(
@@ -121,5 +90,23 @@ def get_current_active_user(
             detail="Debes cambiar tu contraseña antes de continuar",
             headers={"X-Must-Change-Password": "true"}
         )
-    
+
+    return current_user
+
+
+def get_current_admin_user(
+    current_user: Usuario = Depends(get_current_active_user)
+) -> Usuario:
+    """
+    Dependency to get current user and verify it's an admin.
+
+    Depende de get_current_active_user para que un admin con cambio de
+    contraseña pendiente tampoco pueda ejecutar acciones administrativas.
+    """
+    if current_user.tipo_usuario != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos de administrador"
+        )
+
     return current_user

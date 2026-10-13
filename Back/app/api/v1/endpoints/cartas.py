@@ -7,7 +7,7 @@ import io
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
-from app.core.dependencies import get_db, get_current_admin_user, get_current_user
+from app.core.dependencies import get_db, get_current_admin_user, get_current_active_user
 from app.models.usuario import Usuario
 from app.models.carta import Carta, TipoCartaEnum, DisponibilidadEnum
 from app.models.consulta import ConsultaCatalogo
@@ -70,7 +70,7 @@ def list_cartas(
     escala: Optional[str] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_active_user)
 ):
     """
     CU-06: Búsqueda y Filtrado (implementación parcial)
@@ -131,7 +131,7 @@ def list_cartas(
 def get_carta(
     carta_id: UUID,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_active_user)
 ):
     """
     CU-07: Consultar Ficha Técnica (implementación parcial)
@@ -161,7 +161,7 @@ def get_carta(
 def get_carta_by_nomenclatura(
     nomenclatura: str,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(get_current_active_user)
 ):
     """
     CU-07: Consultar Ficha Técnica por Nomenclatura

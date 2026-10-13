@@ -20,6 +20,7 @@ from app.models.usuario import Usuario
 from app.models.carta import Carta
 from app.models.prestamo import Prestamo
 from app.models.consulta import ConsultaCatalogo
+from app.models.refresh_token import RefreshToken
 
 # Alembic Config object
 config = context.config

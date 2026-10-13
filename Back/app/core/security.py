@@ -1,8 +1,9 @@
 """
 Security utilities: JWT tokens and password hashing
 """
-from datetime import datetime, timedelta
-from typing import Optional
+import secrets
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Tuple
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.core.config import settings
@@ -22,69 +23,83 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def _create_token(data: dict, token_type: str, expires_delta: timedelta) -> str:
     """
-    Create a JWT access token
-    
+    Create a signed JWT with a type claim.
+
     Args:
-        data: Data to encode in the token (usually {"sub": user_id})
-        expires_delta: Optional custom expiration time
-    
-    Returns:
-        Encoded JWT token string
+        data: Claims to encode (normalmente {"sub": user_id})
+        token_type: "access" o "refresh"
+        expires_delta: Tiempo de vida del token
     """
     to_encode = data.copy()
-    
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(hours=settings.ACCESS_TOKEN_EXPIRE_HOURS)
-    
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    
-    return encoded_jwt
+    now = datetime.now(timezone.utc)
+    to_encode.update({
+        "exp": now + expires_delta,
+        "iat": now,
+        "type": token_type,
+    })
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def decode_access_token(token: str) -> Optional[dict]:
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a short-lived JWT access token"""
+    if expires_delta is None:
+        expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return _create_token(data, "access", expires_delta)
+
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> Tuple[str, str, datetime]:
     """
-    Decode and verify a JWT token
-    
-    Args:
-        token: JWT token string
-    
+    Create a long-lived refresh token.
+
     Returns:
-        Decoded token payload or None if invalid
+        (token, jti, expires_at)
+    """
+    if expires_delta is None:
+        expires_delta = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode = data.copy()
+    now = datetime.now(timezone.utc)
+    jti = secrets.token_urlsafe(32)
+    to_encode.update({
+        "exp": now + expires_delta,
+        "iat": now,
+        "type": "refresh",
+        "jti": jti,
+    })
+    token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    return token, jti, now + expires_delta
+
+
+def decode_token(token: str) -> Optional[dict]:
+    """
+    Decode and verify a JWT token.
+
+    Returns:
+        Decoded payload or None if invalid
     """
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        return payload
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
         return None
 
 
+# Alias retrocompatible
+decode_access_token = decode_token
+
+
 def generate_temp_password(length: int = 8) -> str:
     """
-    Generate a random temporary password
-    
-    Args:
-        length: Length of the password (default 8)
-    
-    Returns:
-        Random password string (alphanumeric)
+    Generate a cryptographically secure random temporary password.
+
+    Usa el modulo `secrets` (no `random`) para evitar contraseñas predecibles.
     """
-    import random
     import string
-    
+
     characters = string.ascii_letters + string.digits
-    password = ''.join(random.choice(characters) for _ in range(length))
-    
-    # Ensure at least one uppercase, one lowercase, and one digit
-    if not any(c.isupper() for c in password):
-        password = password[:-1] + random.choice(string.ascii_uppercase)
-    if not any(c.islower() for c in password):
-        password = password[:-2] + random.choice(string.ascii_lowercase) + password[-1]
-    if not any(c.isdigit() for c in password):
-        password = password[:-3] + random.choice(string.digits) + password[-2:]
-    
-    return password
+    while True:
+        password = ''.join(secrets.choice(characters) for _ in range(length))
+        if (any(c.isupper() for c in password)
+                and any(c.islower() for c in password)
+                and any(c.isdigit() for c in password)):
+            return password
