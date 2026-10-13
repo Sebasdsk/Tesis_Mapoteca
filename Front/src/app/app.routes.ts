@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, passwordChangedGuard, adminGuard } from './core/guards/auth.guard';
+import { authGuard, passwordChangedGuard, adminGuard, managerGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   // Rutas públicas
@@ -28,11 +28,13 @@ export const routes: Routes = [
         path: 'catalogo/nuevo',
         loadComponent: () =>
           import('./features/catalogo/carta-form/carta-form'),
+        canActivate: [managerGuard],
       },
       {
         path: 'catalogo/carga-masiva',
         loadComponent: () =>
           import('./features/catalogo/carga-masiva/carga-masiva'),
+        canActivate: [managerGuard],
       },
       {
         path: 'catalogo/:id',
@@ -43,6 +45,7 @@ export const routes: Routes = [
         path: 'catalogo/:id/editar',
         loadComponent: () =>
           import('./features/catalogo/carta-form/carta-form'),
+        canActivate: [managerGuard],
       },
 
       // Usuarios (admin)

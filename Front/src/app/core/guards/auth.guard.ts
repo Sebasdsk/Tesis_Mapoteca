@@ -55,3 +55,24 @@ export const adminGuard: CanActivateFn = () => {
 
   return true;
 };
+
+/**
+ * Guard para gestión del catálogo (ADMIN o MAESTRO).
+ * Redirige a /login si no hay sesión y a /catalogo si no tiene permiso.
+ */
+export const managerGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (!authService.isLoggedIn()) {
+    router.navigate(['/login']);
+    return false;
+  }
+
+  if (!authService.canManageCatalog()) {
+    router.navigate(['/catalogo']);
+    return false;
+  }
+
+  return true;
+};

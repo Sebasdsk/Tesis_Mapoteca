@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { CartaService, CartaFilters } from '../../core/service/carta';
+import { AuthService } from '../../core/service/auth';
 import { CartaSimple } from '../../core/models/carta';
 
 @Component({
@@ -16,6 +17,7 @@ import { CartaSimple } from '../../core/models/carta';
 })
 export default class CatalogoComponent implements OnInit, OnDestroy {
   private cartaService = inject(CartaService);
+  authService = inject(AuthService);
   private destroy$ = new Subject<void>();
   private searchSubject$ = new Subject<string>();
 

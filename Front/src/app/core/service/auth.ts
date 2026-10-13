@@ -33,6 +33,10 @@ export class AuthService {
   public currentUser = this._currentUser.asReadonly();
   public isLoggedIn = computed(() => !!this._accessToken());
   public isAdmin = computed(() => this._currentUser()?.tipo_usuario === 'ADMIN');
+  public isMaestro = computed(() => this._currentUser()?.tipo_usuario === 'MAESTRO');
+  // Gestión del catálogo y de préstamos: ADMIN y MAESTRO
+  public canManageCatalog = computed(() => this.isAdmin() || this.isMaestro());
+  public canManageLoans = computed(() => this.isAdmin() || this.isMaestro());
   public mustChangePassword = computed(
     () => this._currentUser()?.debe_cambiar_password ?? false
   );

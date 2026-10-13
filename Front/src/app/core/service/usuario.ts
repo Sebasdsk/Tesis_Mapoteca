@@ -40,6 +40,13 @@ export interface PasswordResetResponse {
   password_temporal: string;
 }
 
+export interface UsuarioLookup {
+  id: string;
+  nombre_completo: string;
+  tipo_usuario: string;
+  numero_identificacion: string | null;
+}
+
 export interface UsuarioFilters {
   tipo_usuario?: string;
   activo?: boolean;
@@ -63,6 +70,13 @@ export class UsuarioService {
 
   getUsuario(id: string): Observable<Usuario> {
     return this.http.get<Usuario>(`${this.apiUrl}/${id}`);
+  }
+
+  /** Búsqueda ligera de usuarios activos (ADMIN/MAESTRO) */
+  lookup(search: string = ''): Observable<UsuarioLookup[]> {
+    let params = new HttpParams();
+    if (search) params = params.set('search', search);
+    return this.http.get<UsuarioLookup[]>(`${this.apiUrl}/lookup`, { params });
   }
 
   createUsuario(data: UsuarioCreate): Observable<UsuarioCreateResponse> {

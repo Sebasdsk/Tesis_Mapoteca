@@ -65,6 +65,16 @@ export interface PrestamoSolicitar {
 }
 
 /**
+ * Request: Préstamo directo registrado por personal (ADMIN/MAESTRO)
+ */
+export interface PrestamoDirecto {
+  usuario_id: string;
+  carta_id: string;
+  fecha_limite: string; // YYYY-MM-DD
+  notas_admin?: string;
+}
+
+/**
  * Request: Aprobar préstamo (CU-09)
  */
 export interface PrestamoAprobar {

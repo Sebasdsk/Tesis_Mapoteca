@@ -6,6 +6,7 @@ import { CartaService } from '../../../core/service/carta';
 import { PrestamoService } from '../../../core/service/prestamo';
 import { AuthService } from '../../../core/service/auth';
 import { ToastService } from '../../../core/service/toast';
+import { UsuarioService, UsuarioLookup } from '../../../core/service/usuario';
 import { Carta } from '../../../core/models/carta';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -24,6 +25,7 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
   private cartaService = inject(CartaService);
   private prestamoService = inject(PrestamoService);
   private http = inject(HttpClient);
+  private usuarioService = inject(UsuarioService);
   authService = inject(AuthService);
   private toast = inject(ToastService);
 
@@ -48,6 +50,16 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
   prestamoLoading = signal(false);
   prestamoSuccess = signal('');
   prestamoError = signal('');
+
+  // Préstamo directo (ADMIN/MAESTRO)
+  showDirectoModal = signal(false);
+  directoFecha = '';
+  directoNotas = '';
+  directoLoading = signal(false);
+  directoError = signal('');
+  userSearch = '';
+  userResults = signal<UsuarioLookup[]>([]);
+  selectedUser = signal<UsuarioLookup | null>(null);
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -247,6 +259,71 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
     const carta = this.carta();
     if (!carta) return false;
     return carta.disponibilidad === 'FISICA' || carta.disponibilidad === 'AMBAS';
+  }
+
+  // --- Préstamo directo (ADMIN/MAESTRO) ---
+
+  openDirectoModal() {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    this.directoFecha = d.toISOString().split('T')[0];
+    this.directoNotas = '';
+    this.directoError.set('');
+    this.userSearch = '';
+    this.userResults.set([]);
+    this.selectedUser.set(null);
+    this.showDirectoModal.set(true);
+  }
+
+  closeDirectoModal() {
+    this.showDirectoModal.set(false);
+  }
+
+  onUserSearchInput(term: string) {
+    this.userSearch = term;
+    this.selectedUser.set(null);
+    if (term.trim().length < 2) {
+      this.userResults.set([]);
+      return;
+    }
+    this.usuarioService.lookup(term).subscribe({
+      next: (results) => this.userResults.set(results),
+      error: () => this.userResults.set([]),
+    });
+  }
+
+  selectUser(user: UsuarioLookup) {
+    this.selectedUser.set(user);
+    this.userResults.set([]);
+    this.userSearch = user.nombre_completo;
+  }
+
+  submitDirecto() {
+    const carta = this.carta();
+    const user = this.selectedUser();
+    if (!carta || !user || !this.directoFecha) return;
+
+    this.directoLoading.set(true);
+    this.directoError.set('');
+
+    this.prestamoService
+      .registrarPrestamoDirecto({
+        usuario_id: user.id,
+        carta_id: carta.id,
+        fecha_limite: this.directoFecha,
+        notas_admin: this.directoNotas || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.directoLoading.set(false);
+          this.showDirectoModal.set(false);
+          this.toast.success('Préstamo registrado: la carta queda ocupada');
+        },
+        error: (err) => {
+          this.directoLoading.set(false);
+          this.directoError.set(err.error?.detail || 'Error al registrar el préstamo');
+        },
+      });
   }
 
   private loadCarta(id: string) {

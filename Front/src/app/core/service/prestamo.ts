@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 import {
   Prestamo,
   PrestamoSolicitar,
+  PrestamoDirecto,
   PrestamoAprobar,
   PrestamoRechazar,
   PrestamoEntregar,
@@ -55,6 +56,14 @@ export class PrestamoService {
    */
   solicitarPrestamo(data: PrestamoSolicitar): Observable<Prestamo> {
     return this.http.post<Prestamo>(this.apiUrl, data);
+  }
+
+  /**
+   * POST /prestamos/directo — Préstamo presencial (ADMIN/MAESTRO)
+   * Crea el préstamo ya en estado ENTREGADO y deja la carta ocupada.
+   */
+  registrarPrestamoDirecto(data: PrestamoDirecto): Observable<Prestamo> {
+    return this.http.post<Prestamo>(`${this.apiUrl}/directo`, data);
   }
 
   /**
