@@ -12,6 +12,7 @@ from app.models.usuario import Usuario
 from app.models.carta import Carta
 from app.models.prestamo import Prestamo, EstadoPrestamoEnum
 from app.models.consulta import ConsultaCatalogo
+from app.services.prestamos import actualizar_prestamos_vencidos
 from app.schemas.reporte import ReporteGeneral, CartaEstadistica, PrestamoVencido, DistribucionUsuarios, ActividadMensual
 
 router = APIRouter()
@@ -22,6 +23,8 @@ def get_reporte_general(
     current_admin: Usuario = Depends(get_current_admin_user)
 ):
     """Obtener estadísticas generales de la mapoteca"""
+    actualizar_prestamos_vencidos(db)
+
     total_usuarios = db.query(Usuario).count()
     total_cartas = db.query(Carta).count()
     
@@ -106,6 +109,8 @@ def get_prestamos_vencidos(
     current_admin: Usuario = Depends(get_current_admin_user)
 ):
     """Obtener lista de préstamos que han vencido"""
+    actualizar_prestamos_vencidos(db)
+
     hoy = datetime.now().date()
     
     vencidos = db.query(Prestamo).filter(

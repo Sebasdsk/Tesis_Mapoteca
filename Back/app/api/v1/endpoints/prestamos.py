@@ -13,6 +13,7 @@ from app.core.dependencies import get_db, get_current_admin_user, get_current_ac
 from app.models.usuario import Usuario
 from app.models.carta import Carta, DisponibilidadEnum
 from app.models.prestamo import Prestamo, EstadoPrestamoEnum
+from app.services.prestamos import actualizar_prestamos_vencidos
 from app.schemas.prestamo import (
     PrestamoSolicitar,
     PrestamoAprobar,
@@ -37,6 +38,9 @@ def solicitar_prestamo(
     CU-08: Un usuario solicita el préstamo de una carta.
     Valida disponibilidad y que no tenga préstamos vencidos.
     """
+    # Actualizar vencidos antes de validar
+    actualizar_prestamos_vencidos(db)
+
     # Verificar que la carta existe y está disponible
     carta = db.query(Carta).filter(Carta.id == data.carta_id).first()
     if not carta:
@@ -105,6 +109,8 @@ def list_prestamos(
     """
     Listar préstamos. Admin ve todos, usuarios normales solo los suyos.
     """
+    actualizar_prestamos_vencidos(db)
+
     query = db.query(Prestamo)
 
     # Non-admin users only see their own
@@ -131,6 +137,8 @@ def get_prestamo(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user),
 ):
+    actualizar_prestamos_vencidos(db)
+
     prestamo = db.query(Prestamo).filter(Prestamo.id == prestamo_id).first()
     if not prestamo:
         raise HTTPException(status_code=404, detail="Préstamo no encontrado")
