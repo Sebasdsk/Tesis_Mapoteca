@@ -2,7 +2,7 @@
 API v1 Main Router
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, usuarios, cartas, prestamos, reportes
+from app.api.v1.endpoints import auth, usuarios, cartas, prestamos, reportes, fuentes_inegi
 
 # Create main API router
 api_router = APIRouter()
@@ -13,3 +13,4 @@ api_router.include_router(usuarios.router, prefix="/usuarios", tags=["Usuarios"]
 api_router.include_router(cartas.router, prefix="/cartas", tags=["Cartas"])
 api_router.include_router(prestamos.router, prefix="/prestamos", tags=["Préstamos"])
 api_router.include_router(reportes.router, prefix="/reportes", tags=["Reportes"])
+api_router.include_router(fuentes_inegi.router, prefix="/fuentes-inegi", tags=["Fuentes INEGI"])

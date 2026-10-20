@@ -17,10 +17,12 @@ from app.schemas.carta import (
     CartaRead,
     CartaUpdate,
     CartaSimple,
+    CartaDetalle,
     CartaBaja,
     CargaMasivaResult,
     CargaMasivaResultRow
 )
+from app.services.inegi import resolver_referencia
 
 
 router = APIRouter()
@@ -143,25 +145,25 @@ def list_escalas(
     return [r[0] for r in rows]
 
 
-@router.get("/{carta_id}", response_model=CartaRead)
+@router.get("/{carta_id}", response_model=CartaDetalle)
 def get_carta(
     carta_id: UUID,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user)
 ):
     """
-    CU-07: Consultar Ficha Técnica (implementación parcial)
-    
-    Get a specific carta by ID with all details.
+    CU-07: Consultar Ficha Técnica
+
+    Get a specific carta by ID with all details, incluida la referencia INEGI resuelta (CU-12).
     """
     carta = db.query(Carta).filter(Carta.id == carta_id).first()
-    
+
     if not carta:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Carta no encontrada"
         )
-    
+
     # Register consulta in consultas_catalogo table (CU-07 Audit)
     nueva_consulta = ConsultaCatalogo(
         usuario_id=current_user.id,
@@ -169,11 +171,15 @@ def get_carta(
     )
     db.add(nueva_consulta)
     db.commit()
-    
-    return carta
+
+    # CU-12: resolver la referencia INEGI
+    return CartaDetalle(
+        **CartaRead.model_validate(carta).model_dump(),
+        referencia_inegi=resolver_referencia(carta, db),
+    )
 
 
-@router.get("/nomenclatura/{nomenclatura}", response_model=CartaRead)
+@router.get("/nomenclatura/{nomenclatura}", response_model=CartaDetalle)
 def get_carta_by_nomenclatura(
     nomenclatura: str,
     db: Session = Depends(get_db),
@@ -181,20 +187,24 @@ def get_carta_by_nomenclatura(
 ):
     """
     CU-07: Consultar Ficha Técnica por Nomenclatura
-    
-    Get a specific carta by its nomenclatura (INEGI code).
+
+    Get a specific carta by its nomenclatura (INEGI code), incluida la referencia INEGI (CU-12).
     """
     carta = db.query(Carta).filter(
         Carta.nomenclatura == nomenclatura.upper()
     ).first()
-    
+
     if not carta:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No se encontró una carta con nomenclatura {nomenclatura}"
         )
-    
-    return carta
+
+    # CU-12: resolver la referencia INEGI
+    return CartaDetalle(
+        **CartaRead.model_validate(carta).model_dump(),
+        referencia_inegi=resolver_referencia(carta, db),
+    )
 
 
 @router.put("/{carta_id}", response_model=CartaRead)
@@ -219,7 +229,7 @@ def update_carta(
     
     # Update fields
     update_data = carta_data.model_dump(exclude_unset=True)
-    
+
     for field, value in update_data.items():
         setattr(carta, field, value)
     
@@ -651,4 +661,3 @@ async def carga_masiva_cartas(
         errores=errores_count,
         detalle=resultados
     )
-

@@ -12,6 +12,7 @@ from app.models.usuario import Usuario, TipoUsuarioEnum
 from app.models.carta import Carta, TipoCartaEnum, DisponibilidadEnum, TipoCoordenadasEnum
 from app.models.prestamo import Prestamo  # noqa: F401 — needed for table creation
 from app.models.refresh_token import RefreshToken  # noqa: F401 — needed for table creation
+from app.models.fuente_inegi import FuenteInegi, EstadoEnlaceEnum
 from app.core.security import get_password_hash
 from app.core.config import settings
 from datetime import date
@@ -232,6 +233,27 @@ def init_db(db: Session) -> None:
             db.add(carta)
             print(f"OK Sample carta created: {carta_data['nomenclatura']} - {carta_data['nombre']}")
     
+    # Solo la página indicada en la guía: no inventar referencias por escala/tipo.
+    # SIN_VERIFICAR indica que el sistema todavía no ha comprobado el enlace.
+    sample_fuentes = [
+        {
+            "escala": "1:50,000",
+            "tipo_carta": TipoCartaEnum.TOPOGRAFICA,
+            "nombre": "Cartas topográficas 1:50,000",
+            "url": "https://www.inegi.org.mx/programas/topografia/50000/",
+        },
+    ]
+
+    for fuente_data in sample_fuentes:
+        existing = db.query(FuenteInegi).filter(
+            FuenteInegi.escala == fuente_data["escala"],
+            FuenteInegi.tipo_carta == fuente_data["tipo_carta"],
+        ).first()
+
+        if not existing:
+            db.add(FuenteInegi(**fuente_data, estado_enlace=EstadoEnlaceEnum.SIN_VERIFICAR))
+            print(f"OK Sample fuente INEGI created: {fuente_data['escala']} {fuente_data['tipo_carta']}")
+
     # Commit all changes
     db.commit()
     print("\n✅ Database initialization completed successfully!")

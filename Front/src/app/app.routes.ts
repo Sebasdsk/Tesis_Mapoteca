@@ -50,6 +50,11 @@ export const routes: Routes = [
 
       // Usuarios (admin)
       {
+        path: 'fuentes-inegi',
+        loadComponent: () => import('./features/fuentes-inegi/fuentes-inegi'),
+        canActivate: [managerGuard],
+      },
+      {
         path: 'usuarios',
         loadComponent: () => import('./features/usuarios/usuarios'),
         canActivate: [adminGuard],

@@ -1,12 +1,14 @@
 """
 Carta Pydantic schemas for request/response validation
 """
-from pydantic import BaseModel, ConfigDict, Field, validator
-from typing import Optional, Dict, Any
+from pydantic import BaseModel, ConfigDict, Field, validator, field_validator
+from typing import Optional, Dict, Any, Literal
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 from app.models.carta import TipoCartaEnum, DisponibilidadEnum, TipoCoordenadasEnum
+from app.models.fuente_inegi import EstadoEnlaceEnum
+from app.services.inegi import validar_url_inegi
 
 
 # Base schema with common fields
@@ -43,6 +45,13 @@ class CartaBase(BaseModel):
 # Schema for creating a new carta
 class CartaCreate(CartaBase):
     """Schema for creating a new carta"""
+
+    @field_validator('url_inegi')
+    @classmethod
+    def validar_referencia(cls, valor):
+        if valor is None or not valor.strip():
+            return None
+        return validar_url_inegi(valor)
     
     @validator('nomenclatura')
     def nomenclatura_uppercase(cls, v):
@@ -83,6 +92,13 @@ class CartaUpdate(BaseModel):
     metadata_inegi: Optional[Dict[str, Any]] = None
     notas: Optional[str] = None
 
+    @field_validator('url_inegi')
+    @classmethod
+    def validar_referencia(cls, valor):
+        if valor is None or not valor.strip():
+            return None
+        return validar_url_inegi(valor)
+
 
 # Schema for response (reading a carta)
 class CartaRead(CartaBase):
@@ -92,6 +108,21 @@ class CartaRead(CartaBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# Referencia oficial del INEGI resuelta para la ficha técnica
+class ReferenciaInegiRead(BaseModel):
+    """Referencia resuelta: URL específica de la carta o del catálogo oficial"""
+    url: str
+    nombre: Optional[str] = None
+    origen: Literal["carta", "catalogo"]
+    estado: Optional[EstadoEnlaceEnum] = None
+
+
+# Schema para la ficha técnica (incluye la referencia INEGI resuelta)
+class CartaDetalle(CartaRead):
+    """Carta con la referencia INEGI resuelta (CU-12)"""
+    referencia_inegi: Optional[ReferenciaInegiRead] = None
 
 
 # Schema for lista simple (usado en búsquedas)
@@ -138,4 +169,3 @@ class CargaMasivaResult(BaseModel):
     exitosas: int
     errores: int
     detalle: list[CargaMasivaResultRow]
-

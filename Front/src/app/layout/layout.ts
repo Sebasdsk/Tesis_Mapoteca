@@ -8,6 +8,7 @@ interface NavItem {
   label: string;
   route: string;
   adminOnly: boolean;
+  managerOnly?: boolean;
   disabled?: boolean;
 }
 
@@ -24,10 +25,12 @@ export default class LayoutComponent {
   sidebarOpen = signal(false);
   currentUser = this.authService.currentUser;
   isAdmin = this.authService.isAdmin;
+  canManageCatalog = this.authService.canManageCatalog;
 
   navItems: NavItem[] = [
     { icon: 'auto_stories', label: 'Catálogo', route: '/catalogo', adminOnly: false },
     { icon: 'swap_horiz', label: 'Préstamos', route: '/prestamos', adminOnly: false },
+    { icon: 'language', label: 'Fuentes INEGI', route: '/fuentes-inegi', adminOnly: false, managerOnly: true },
     { icon: 'group', label: 'Usuarios', route: '/usuarios', adminOnly: true },
     { icon: 'bar_chart', label: 'Reportes', route: '/reportes', adminOnly: true },
   ];

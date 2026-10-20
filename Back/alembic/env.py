@@ -21,6 +21,7 @@ from app.models.carta import Carta
 from app.models.prestamo import Prestamo
 from app.models.consulta import ConsultaCatalogo
 from app.models.refresh_token import RefreshToken
+from app.models.fuente_inegi import FuenteInegi
 
 # Alembic Config object
 config = context.config

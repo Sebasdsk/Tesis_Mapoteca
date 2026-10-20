@@ -36,6 +36,16 @@ export interface MetadataInegi {
 }
 
 /**
+ * Referencia oficial del INEGI resuelta para la ficha técnica (CU-12)
+ */
+export interface ReferenciaInegi {
+  url: string;
+  nombre: string | null;
+  origen: 'carta' | 'catalogo';
+  estado: 'sin_verificar' | 'valido' | 'no_responde' | null;
+}
+
+/**
  * Modelo completo de Carta (respuesta del backend)
  */
 export interface Carta {
@@ -65,6 +75,7 @@ export interface Carta {
   notas: string | null;
   created_at: string;
   updated_at: string;
+  referencia_inegi?: ReferenciaInegi | null;
 }
 
 /**

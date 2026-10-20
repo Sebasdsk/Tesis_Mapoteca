@@ -81,6 +81,17 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
     }
   }
 
+  async copiarClaveInegi(): Promise<void> {
+    const clave = this.carta()?.nomenclatura;
+    if (!clave) return;
+    try {
+      await navigator.clipboard.writeText(clave);
+      this.toast.success('Clave INEGI copiada');
+    } catch {
+      this.toast.info(`No se pudo copiar automáticamente. La clave es: ${clave}`);
+    }
+  }
+
   parseDMSToDecimal(dmsStr: string | null | undefined, isLongitude = false): number | null {
     if (!dmsStr) return null;
     const clean = dmsStr.trim();
