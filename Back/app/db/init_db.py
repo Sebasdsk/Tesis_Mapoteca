@@ -229,7 +229,10 @@ def init_db(db: Session) -> None:
         ).first()
         
         if not existing:
-            carta = Carta(**carta_data)
+            data = dict(carta_data)
+            if data.get("fecha_edicion"):
+                data["anio_edicion"] = data["fecha_edicion"].year
+            carta = Carta(**data)
             db.add(carta)
             print(f"OK Sample carta created: {carta_data['nomenclatura']} - {carta_data['nombre']}")
     

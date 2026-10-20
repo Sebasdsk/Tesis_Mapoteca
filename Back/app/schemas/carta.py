@@ -31,6 +31,7 @@ class CartaBase(BaseModel):
     limites_sur: Optional[Decimal] = None
     limites_este: Optional[Decimal] = None
     limites_oeste: Optional[Decimal] = None
+    anio_edicion: Optional[int] = Field(None, ge=1500, le=2100, description="Año de edición si solo se conoce el año")
     fecha_edicion: Optional[date] = None
     estado_republica: Optional[str] = Field(None, max_length=100)
     disponibilidad: DisponibilidadEnum = DisponibilidadEnum.FISICA
@@ -53,6 +54,7 @@ class CartaCreate(CartaBase):
         if valor is None or not valor.strip():
             return None
         return validar_url_inegi(valor)
+
     
     @validator('nomenclatura')
     def nomenclatura_uppercase(cls, v):
@@ -86,6 +88,7 @@ class CartaUpdate(BaseModel):
     limites_sur: Optional[Decimal] = None
     limites_este: Optional[Decimal] = None
     limites_oeste: Optional[Decimal] = None
+    anio_edicion: Optional[int] = Field(None, ge=1500, le=2100)
     fecha_edicion: Optional[date] = None
     estado_republica: Optional[str] = Field(None, max_length=100)
     disponibilidad: Optional[DisponibilidadEnum] = None
@@ -100,6 +103,7 @@ class CartaUpdate(BaseModel):
         if valor is None or not valor.strip():
             return None
         return validar_url_inegi(valor)
+
 
 
 # Schema for response (reading a carta)

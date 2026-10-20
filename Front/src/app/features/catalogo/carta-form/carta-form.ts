@@ -26,6 +26,8 @@ export default class CartaFormComponent implements OnInit {
 
   editId = '';
 
+  edicionModo: 'anio' | 'fecha' = 'anio';
+
   formData: any = {
     nomenclatura: '',
     nombre: '',
@@ -44,6 +46,7 @@ export default class CartaFormComponent implements OnInit {
     limites_sur: null,
     limites_este: null,
     limites_oeste: null,
+    anio_edicion: null,
     fecha_edicion: '',
     estado_republica: '',
     disponibilidad: 'FISICA',
@@ -106,6 +109,15 @@ export default class CartaFormComponent implements OnInit {
     this.errorMessage.set('');
     this.successMessage.set('');
 
+    if (this.edicionModo === 'anio' && this.formData.anio_edicion) {
+      const anio = Number(this.formData.anio_edicion);
+      if (!Number.isInteger(anio) || anio < 1500 || anio > 2100) {
+        this.isSaving.set(false);
+        this.errorMessage.set('El año de edición debe ser un número entre 1500 y 2100.');
+        return;
+      }
+    }
+
     // Combinar estados seleccionados
     const activeEstados = this.selectedEstados.filter(s => !!s);
     this.formData.estado_republica = activeEstados.length > 0 ? activeEstados.join(', ') : '';
@@ -167,6 +179,8 @@ export default class CartaFormComponent implements OnInit {
           this.selectedEstados[i] = states[i] || '';
         }
 
+        this.edicionModo = carta.fecha_edicion ? 'fecha' : 'anio';
+
         this.formData = {
           nomenclatura: carta.nomenclatura || '',
           nombre: carta.nombre || '',
@@ -185,6 +199,7 @@ export default class CartaFormComponent implements OnInit {
           limites_sur: carta.limites_sur,
           limites_este: carta.limites_este,
           limites_oeste: carta.limites_oeste,
+          anio_edicion: carta.anio_edicion ?? null,
           fecha_edicion: carta.fecha_edicion || '',
           estado_republica: carta.estado_republica || '',
           disponibilidad: carta.disponibilidad || 'FISICA',
@@ -245,6 +260,18 @@ export default class CartaFormComponent implements OnInit {
     d.escala = this.formData.escala;
     d.tipo_carta = this.formData.tipo_carta;
     d.unidades_total = Number(this.formData.unidades_total) || 1;
+
+    // Edición: solo año o fecha completa. Se envían ambos campos explícitamente
+    // (aunque uno sea null) para limpiar el que no corresponde al modo elegido.
+    if (this.edicionModo === 'anio') {
+      const raw = this.formData.anio_edicion;
+      const anio = raw === null || raw === '' ? NaN : Number(raw);
+      d.anio_edicion = Number.isInteger(anio) ? anio : null;
+      d.fecha_edicion = null;
+    } else {
+      d.fecha_edicion = this.formData.fecha_edicion || null;
+      d.anio_edicion = null;
+    }
     return d;
   }
 }

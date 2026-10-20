@@ -67,6 +67,7 @@ export interface Carta {
   limites_sur: number | null;
   limites_este: number | null;
   limites_oeste: number | null;
+  anio_edicion: number | null;
   fecha_edicion: string | null;
   estado_republica: string | null;
   disponibilidad: Disponibilidad;

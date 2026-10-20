@@ -29,6 +29,20 @@ from app.services.prestamos import unidades_ocupadas
 router = APIRouter()
 
 
+def _reconciliar_anio_edicion(data: dict) -> dict:
+    """Mantiene coherentes el año y la fecha completa de edición."""
+    fecha = data.get("fecha_edicion")
+    anio = data.get("anio_edicion")
+    if fecha is not None:
+        if anio is not None and anio != fecha.year:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El año de edición no coincide con la fecha completa."
+            )
+        data["anio_edicion"] = fecha.year
+    return data
+
+
 @router.post("/", response_model=CartaRead, status_code=status.HTTP_201_CREATED)
 def create_carta(
     carta_data: CartaCreate,
@@ -54,7 +68,7 @@ def create_carta(
         )
     
     # Create new carta
-    new_carta = Carta(**carta_data.model_dump())
+    new_carta = Carta(**_reconciliar_anio_edicion(carta_data.model_dump()))
     
     db.add(new_carta)
     db.commit()
@@ -236,6 +250,7 @@ def update_carta(
     
     # Update fields
     update_data = carta_data.model_dump(exclude_unset=True)
+    update_data = _reconciliar_anio_edicion(update_data)
 
     if "unidades_total" in update_data:
         ocupadas = unidades_ocupadas(db, carta_id)
@@ -506,6 +521,17 @@ async def carga_masiva_cartas(
                 continue
         return None
 
+    def parse_csv_edicion(val: str):
+        """Devuelve (fecha_completa, anio). Un año suelto no inventa día/mes."""
+        val = (val or '').strip()
+        if not val:
+            return None, None
+        if val.isdigit() and len(val) == 4:
+            anio = int(val)
+            return None, anio if 1500 <= anio <= 2100 else None
+        fecha = parse_csv_date(val)
+        return fecha, fecha.year if fecha else None
+
     def normalize_estados(val: str) -> Optional[str]:
         if not val:
             return None
@@ -624,7 +650,7 @@ async def carga_masiva_cartas(
 
         try:
             # Parse year/date
-            f_edicion = parse_csv_date(get_val('fecha_edicion'))
+            f_edicion, anio_edicion = parse_csv_edicion(get_val('fecha_edicion'))
             
             carta = Carta(
                 nomenclatura=nomenclatura,
@@ -640,6 +666,7 @@ async def carga_masiva_cartas(
                 coordenadas_longitud=lng or None,
                 limites_detalle=limites or None,
                 tipo_coordenadas=tipo_coord,
+                anio_edicion=anio_edicion,
                 fecha_edicion=f_edicion,
                 estado_republica=normalize_estados(get_val('estado_republica')),
                 disponibilidad=disponibilidad,

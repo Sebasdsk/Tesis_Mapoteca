@@ -74,10 +74,12 @@
               <dd class="text-sm font-medium text-slate-800">{{ carta()!.estado_republica }}</dd>
             </div>
           }
-          @if (carta()!.fecha_edicion) {
+          @if (carta()!.fecha_edicion || carta()!.anio_edicion) {
             <div class="flex justify-between">
-              <dt class="text-sm text-slate-500">Fecha Edición</dt>
-              <dd class="text-sm font-medium text-slate-800">{{ carta()!.fecha_edicion }}</dd>
+              <dt class="text-sm text-slate-500">Edición</dt>
+              <dd class="text-sm font-medium text-slate-800">
+                {{ carta()!.fecha_edicion ? (carta()!.fecha_edicion | date:'dd/MM/yyyy') : carta()!.anio_edicion }}
+              </dd>
             </div>
           }
         </dl>

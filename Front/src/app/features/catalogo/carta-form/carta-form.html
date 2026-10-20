@@ -327,11 +327,19 @@
             <p class="text-xs text-slate-400 mt-1">Número de copias físicas disponibles en el inventario.</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Fecha Edición</label>
-            <input type="date" [(ngModel)]="formData.fecha_edicion" name="fecha_edicion"
-                   class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm
-                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-          </div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Edición</label>
+            <div class="inline-flex rounded-lg border border-slate-300 p-0.5 mb-2 text-xs">
+              <button type="button" (click)="edicionModo = 'anio'"
+                      class="px-3 py-1 rounded-md transition-colors"
+                      [class]="edicionModo === 'anio' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-slate-100'">
+                Solo año
+              </button>
+              <button type="button" (click)="edicionModo = 'fecha'"
+                      class="px-3 py-1 rounded-md transition-colors"
+                      [class]="edicionModo === 'fecha' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-slate-100'">
+                Fecha completa
+              </button>
+            </div>
         </div>
       </div>
 

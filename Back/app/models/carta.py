@@ -82,7 +82,8 @@ class Carta(Base):
     limites_oeste = Column(Numeric(10, 6), nullable=True)
     
     # Date and location
-    fecha_edicion = Column(Date, nullable=True, comment="Fecha de la carta física")
+    anio_edicion = Column(Integer, nullable=True, comment="Año de edición cuando no se conoce la fecha completa")
+    fecha_edicion = Column(Date, nullable=True, comment="Fecha completa de edición de la carta física")
     estado_republica = Column(String(100), nullable=True, index=True)
     
     # Availability

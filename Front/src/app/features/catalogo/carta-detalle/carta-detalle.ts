@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, DatePipe } from '@angular/common';
 import { CartaService } from '../../../core/service/carta';
 import { PrestamoService } from '../../../core/service/prestamo';
 import { AuthService } from '../../../core/service/auth';
@@ -15,7 +15,7 @@ import * as L from 'leaflet';
 @Component({
   selector: 'app-carta-detalle',
   standalone: true,
-  imports: [RouterLink, NgClass, FormsModule],
+  imports: [RouterLink, NgClass, FormsModule, DatePipe],
   templateUrl: './carta-detalle.html',
   styleUrl: './carta-detalle.css',
 })
