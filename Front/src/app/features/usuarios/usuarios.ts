@@ -37,6 +37,7 @@ export default class UsuariosComponent implements OnInit {
     numero_identificacion: '',
     nombre_completo: '',
     email: '',
+    telefono: '',
     institucion: '',
   };
   formError = signal('');
@@ -77,6 +78,7 @@ export default class UsuariosComponent implements OnInit {
       numero_identificacion: '',
       nombre_completo: '',
       email: '',
+      telefono: '',
       institucion: '',
     };
     this.formError.set('');
@@ -91,6 +93,7 @@ export default class UsuariosComponent implements OnInit {
       numero_identificacion: user.numero_identificacion || '',
       nombre_completo: user.nombre_completo,
       email: user.email || '',
+      telefono: user.telefono || '',
       institucion: user.institucion || '',
     };
     this.formError.set('');
@@ -109,6 +112,7 @@ export default class UsuariosComponent implements OnInit {
       const update: UsuarioUpdate = {
         nombre_completo: this.formData.nombre_completo,
         email: this.formData.email || undefined,
+        telefono: this.formData.telefono || undefined,
         institucion: this.formData.institucion || undefined,
       };
       this.usuarioService.updateUsuario(this.editingId, update).subscribe({
@@ -129,6 +133,7 @@ export default class UsuariosComponent implements OnInit {
         nombre_completo: this.formData.nombre_completo,
         numero_identificacion: this.formData.numero_identificacion || undefined,
         email: this.formData.email || undefined,
+        telefono: this.formData.telefono || undefined,
         institucion: this.formData.institucion || undefined,
       };
       this.usuarioService.createUsuario(create).subscribe({

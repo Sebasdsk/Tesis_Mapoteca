@@ -203,6 +203,76 @@
       </div>
     </div>
 
+    <!-- Cartas Prestadas -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+      <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-lg">inventory_2</span>
+          Cartas Prestadas
+        </h2>
+        <span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-full">
+          {{ prestadosActivos().length }}
+        </span>
+      </div>
+      <div class="p-0 overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600 min-w-[760px]">
+          <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500">
+            <tr>
+              <th class="px-5 py-3 border-b border-slate-200">Carta</th>
+              <th class="px-5 py-3 border-b border-slate-200">Usuario</th>
+              <th class="px-5 py-3 border-b border-slate-200">Contacto</th>
+              <th class="px-5 py-3 border-b border-slate-200">Fecha de préstamo</th>
+              <th class="px-5 py-3 border-b border-slate-200">Fecha límite</th>
+              <th class="px-5 py-3 border-b border-slate-200 text-right">Retraso</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (p of prestadosActivos(); track p.prestamo_id) {
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-5 py-4">
+                  <p class="font-medium text-slate-800">{{ p.carta_nombre }}</p>
+                  <p class="text-xs font-mono text-slate-500">{{ p.carta_nomenclatura }}</p>
+                </td>
+                <td class="px-5 py-4">
+                  <p class="font-medium text-slate-800">{{ p.usuario_nombre }}</p>
+                  @if (p.usuario_identificacion) {
+                    <p class="text-xs text-slate-500">{{ p.usuario_identificacion }}</p>
+                  }
+                </td>
+                <td class="px-5 py-4">
+                  @if (p.usuario_email) { <p class="text-xs text-slate-500">{{ p.usuario_email }}</p> }
+                  @if (p.usuario_telefono) { <p class="text-xs text-slate-500">{{ p.usuario_telefono }}</p> }
+                  @if (!p.usuario_email && !p.usuario_telefono) { <p class="text-xs text-slate-400">Sin contacto</p> }
+                </td>
+                <td class="px-5 py-4 whitespace-nowrap">{{ p.fecha_entrega | date:'dd MMM yyyy' }}</td>
+                <td class="px-5 py-4 whitespace-nowrap">{{ p.fecha_limite | date:'dd MMM yyyy' }}</td>
+                <td class="px-5 py-4 text-right">
+                  @if (p.dias_retraso > 0) {
+                    <span class="inline-flex items-center gap-1 text-red-700 font-bold bg-red-100 px-2.5 py-1 rounded-md text-xs">
+                      <span class="material-symbols-outlined text-[14px]">timer</span>
+                      {{ p.dias_retraso }} días
+                    </span>
+                  } @else {
+                    <span class="text-xs text-slate-400">Al día</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="px-5 py-12 text-center">
+                  <div class="flex flex-col items-center justify-center text-slate-400">
+                    <span class="material-symbols-outlined text-4xl mb-3 text-emerald-500">check_circle</span>
+                    <p class="text-slate-600 font-medium">Sin cartas prestadas</p>
+                    <p class="text-sm">No hay material fuera de la mapoteca en este momento.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Prestamos Vencidos -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
       <div class="px-5 py-4 border-b border-slate-200 bg-red-50 flex items-center justify-between">

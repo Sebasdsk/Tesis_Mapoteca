@@ -23,6 +23,7 @@ from app.schemas.carta import (
     CargaMasivaResultRow
 )
 from app.services.inegi import resolver_referencia
+from app.services.prestamos import unidades_ocupadas
 
 
 router = APIRouter()
@@ -173,9 +174,12 @@ def get_carta(
     db.commit()
 
     # CU-12: resolver la referencia INEGI
+    ocupadas = unidades_ocupadas(db, carta.id)
     return CartaDetalle(
         **CartaRead.model_validate(carta).model_dump(),
         referencia_inegi=resolver_referencia(carta, db),
+        unidades_prestadas=ocupadas,
+        unidades_disponibles=max(0, carta.unidades_total - ocupadas),
     )
 
 
@@ -201,9 +205,12 @@ def get_carta_by_nomenclatura(
         )
 
     # CU-12: resolver la referencia INEGI
+    ocupadas = unidades_ocupadas(db, carta.id)
     return CartaDetalle(
         **CartaRead.model_validate(carta).model_dump(),
         referencia_inegi=resolver_referencia(carta, db),
+        unidades_prestadas=ocupadas,
+        unidades_disponibles=max(0, carta.unidades_total - ocupadas),
     )
 
 
@@ -229,6 +236,14 @@ def update_carta(
     
     # Update fields
     update_data = carta_data.model_dump(exclude_unset=True)
+
+    if "unidades_total" in update_data:
+        ocupadas = unidades_ocupadas(db, carta_id)
+        if update_data["unidades_total"] < ocupadas:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"No se puede reducir a menos unidades: hay {ocupadas} préstamo(s) activo(s)."
+            )
 
     for field, value in update_data.items():
         setattr(carta, field, value)

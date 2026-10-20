@@ -7,20 +7,27 @@ from sqlalchemy import func, desc
 from typing import List
 from datetime import datetime
 
-from app.core.dependencies import get_db, get_current_admin_user
+from app.core.dependencies import get_db, get_current_admin_or_maestro
 from app.models.usuario import Usuario
 from app.models.carta import Carta
 from app.models.prestamo import Prestamo, EstadoPrestamoEnum
 from app.models.consulta import ConsultaCatalogo
 from app.services.prestamos import actualizar_prestamos_vencidos
-from app.schemas.reporte import ReporteGeneral, CartaEstadistica, PrestamoVencido, DistribucionUsuarios, ActividadMensual
+from app.schemas.reporte import (
+    ReporteGeneral,
+    CartaEstadistica,
+    PrestamoVencido,
+    PrestamoActivo,
+    DistribucionUsuarios,
+    ActividadMensual,
+)
 
 router = APIRouter()
 
 @router.get("/general", response_model=ReporteGeneral)
 def get_reporte_general(
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """Obtener estadísticas generales de la mapoteca"""
     actualizar_prestamos_vencidos(db)
@@ -50,7 +57,7 @@ def get_reporte_general(
 def get_cartas_mas_buscadas(
     limit: int = 5,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """Top cartas más consultadas"""
     # Contar agrupando por carta_id
@@ -79,7 +86,7 @@ def get_cartas_mas_buscadas(
 def get_cartas_mas_prestadas(
     limit: int = 5,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """Top cartas más solicitadas para préstamo"""
     resultados = db.query(
@@ -106,7 +113,7 @@ def get_cartas_mas_prestadas(
 @router.get("/prestamos-vencidos", response_model=List[PrestamoVencido])
 def get_prestamos_vencidos(
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """Obtener lista de préstamos que han vencido"""
     actualizar_prestamos_vencidos(db)
@@ -148,10 +155,45 @@ def get_prestamos_vencidos(
     resultado.sort(key=lambda x: x["dias_retraso"], reverse=True)
     return resultado
 
+@router.get("/prestamos-activos", response_model=List[PrestamoActivo])
+def get_prestamos_activos(
+    db: Session = Depends(get_db),
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
+):
+    """Cartas actualmente prestadas (ENTREGADO) con datos de contacto del usuario."""
+    actualizar_prestamos_vencidos(db)
+
+    hoy = datetime.now().date()
+    activos = db.query(Prestamo).filter(
+        Prestamo.estado == EstadoPrestamoEnum.ENTREGADO
+    ).order_by(Prestamo.fecha_entrega.desc()).all()
+
+    resultado = []
+    for p in activos:
+        dias = 0
+        if p.fecha_limite:
+            delta = hoy - p.fecha_limite
+            dias = delta.days if delta.days > 0 else 0
+
+        resultado.append({
+            "prestamo_id": p.id,
+            "usuario_nombre": p.usuario.nombre_completo,
+            "usuario_email": p.usuario.email,
+            "usuario_telefono": p.usuario.telefono,
+            "usuario_identificacion": p.usuario.numero_identificacion,
+            "carta_nomenclatura": p.carta.nomenclatura,
+            "carta_nombre": p.carta.nombre,
+            "fecha_entrega": p.fecha_entrega,
+            "fecha_limite": p.fecha_limite,
+            "dias_retraso": dias,
+        })
+
+    return resultado
+
 @router.get("/distribucion-usuarios", response_model=List[DistribucionUsuarios])
 def get_distribucion_usuarios(
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """Distribucion de usuarios registrados por tipo"""
     resultados = db.query(
@@ -171,7 +213,7 @@ def get_distribucion_usuarios(
 def get_actividad_mensual(
     meses: int = 12,
     db: Session = Depends(get_db),
-    current_admin: Usuario = Depends(get_current_admin_user)
+    current_admin: Usuario = Depends(get_current_admin_or_maestro)
 ):
     """Actividad de prestamos agrupada por mes (ultimos N meses)"""
     from datetime import timedelta

@@ -15,6 +15,7 @@ class UsuarioBase(BaseModel):
     numero_identificacion: Optional[str] = Field(None, max_length=50)
     nombre_completo: str = Field(..., min_length=1, max_length=255)
     email: Optional[EmailStr] = None
+    telefono: Optional[str] = Field(None, max_length=30)
     institucion: Optional[str] = Field(None, max_length=255)
 
 
@@ -44,6 +45,7 @@ class UsuarioUpdate(BaseModel):
     """Schema for updating an existing user"""
     nombre_completo: Optional[str] = Field(None, min_length=1, max_length=255)
     email: Optional[EmailStr] = None
+    telefono: Optional[str] = Field(None, max_length=30)
     activo: Optional[bool] = None
     institucion: Optional[str] = Field(None, max_length=255)
 

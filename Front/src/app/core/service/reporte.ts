@@ -6,6 +6,7 @@ import {
   ReporteGeneral,
   CartaEstadistica,
   PrestamoVencido,
+  PrestamoActivo,
   DistribucionUsuarios,
   ActividadMensual,
 } from '../models/reporte';
@@ -37,6 +38,10 @@ export class ReporteService {
 
   getPrestamosVencidos(): Observable<PrestamoVencido[]> {
     return this.http.get<PrestamoVencido[]>(`${this.apiUrl}/prestamos-vencidos`);
+  }
+
+  getPrestamosActivos(): Observable<PrestamoActivo[]> {
+    return this.http.get<PrestamoActivo[]>(`${this.apiUrl}/prestamos-activos`);
   }
 
   getDistribucionUsuarios(): Observable<DistribucionUsuarios[]> {

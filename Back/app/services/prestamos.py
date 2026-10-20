@@ -6,6 +6,13 @@ from sqlalchemy.orm import Session
 
 from app.models.prestamo import Prestamo, EstadoPrestamoEnum
 
+# Estados que ocupan una unidad física (reservada o prestada)
+ESTADOS_OCUPADOS = (
+    EstadoPrestamoEnum.SOLICITADO,
+    EstadoPrestamoEnum.APROBADO,
+    EstadoPrestamoEnum.ENTREGADO,
+)
+
 
 def actualizar_prestamos_vencidos(db: Session) -> int:
     """
@@ -28,3 +35,11 @@ def actualizar_prestamos_vencidos(db: Session) -> int:
         db.commit()
 
     return len(vencidos)
+
+
+def unidades_ocupadas(db: Session, carta_id) -> int:
+    """Cantidad de préstamos que ocupan unidades de una carta (reservadas o prestadas)."""
+    return db.query(Prestamo).filter(
+        Prestamo.carta_id == carta_id,
+        Prestamo.estado.in_(ESTADOS_OCUPADOS),
+    ).count()

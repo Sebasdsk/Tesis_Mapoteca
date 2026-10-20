@@ -32,7 +32,7 @@ export default class LayoutComponent {
     { icon: 'swap_horiz', label: 'Préstamos', route: '/prestamos', adminOnly: false },
     { icon: 'language', label: 'Fuentes INEGI', route: '/fuentes-inegi', adminOnly: false, managerOnly: true },
     { icon: 'group', label: 'Usuarios', route: '/usuarios', adminOnly: true },
-    { icon: 'bar_chart', label: 'Reportes', route: '/reportes', adminOnly: true },
+    { icon: 'bar_chart', label: 'Reportes', route: '/reportes', adminOnly: false, managerOnly: true },
   ];
 
   toggleSidebar() {

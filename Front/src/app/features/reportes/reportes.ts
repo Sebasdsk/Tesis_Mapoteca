@@ -7,6 +7,7 @@ import {
   ReporteGeneral,
   CartaEstadistica,
   PrestamoVencido,
+  PrestamoActivo,
   DistribucionUsuarios,
   ActividadMensual,
 } from '../../core/models/reporte';
@@ -28,6 +29,7 @@ export default class ReportesComponent implements OnInit, OnDestroy {
   masBuscadas = signal<CartaEstadistica[]>([]);
   masPrestadas = signal<CartaEstadistica[]>([]);
   vencidos = signal<PrestamoVencido[]>([]);
+  prestadosActivos = signal<PrestamoActivo[]>([]);
   distribucion = signal<DistribucionUsuarios[]>([]);
   actividad = signal<ActividadMensual[]>([]);
 
@@ -59,14 +61,16 @@ export default class ReportesComponent implements OnInit, OnDestroy {
       firstValueFrom(this.reporteService.getCartasMasBuscadas(5)),
       firstValueFrom(this.reporteService.getCartasMasPrestadas(5)),
       firstValueFrom(this.reporteService.getPrestamosVencidos()),
+      firstValueFrom(this.reporteService.getPrestamosActivos()),
       firstValueFrom(this.reporteService.getDistribucionUsuarios()),
       firstValueFrom(this.reporteService.getActividadMensual(12)),
     ])
-      .then(([resumenRes, buscadasRes, prestadasRes, vencidosRes, distRes, actRes]) => {
+      .then(([resumenRes, buscadasRes, prestadasRes, vencidosRes, activosRes, distRes, actRes]) => {
         this.resumen.set(resumenRes || null);
         this.masBuscadas.set(buscadasRes || []);
         this.masPrestadas.set(prestadasRes || []);
         this.vencidos.set(vencidosRes || []);
+        this.prestadosActivos.set(activosRes || []);
         this.distribucion.set(distRes || []);
         this.actividad.set(actRes || []);
         // Render charts after a tick so canvas elements exist

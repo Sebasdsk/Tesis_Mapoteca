@@ -34,6 +34,7 @@ class CartaBase(BaseModel):
     fecha_edicion: Optional[date] = None
     estado_republica: Optional[str] = Field(None, max_length=100)
     disponibilidad: DisponibilidadEnum = DisponibilidadEnum.FISICA
+    unidades_total: int = Field(1, ge=1, le=999, description="Número total de copias físicas")
     url_inegi: Optional[str] = None
     metadata_inegi: Optional[Dict[str, Any]] = Field(
         None,
@@ -88,6 +89,7 @@ class CartaUpdate(BaseModel):
     fecha_edicion: Optional[date] = None
     estado_republica: Optional[str] = Field(None, max_length=100)
     disponibilidad: Optional[DisponibilidadEnum] = None
+    unidades_total: Optional[int] = Field(None, ge=1, le=999)
     url_inegi: Optional[str] = None
     metadata_inegi: Optional[Dict[str, Any]] = None
     notas: Optional[str] = None
@@ -123,6 +125,8 @@ class ReferenciaInegiRead(BaseModel):
 class CartaDetalle(CartaRead):
     """Carta con la referencia INEGI resuelta (CU-12)"""
     referencia_inegi: Optional[ReferenciaInegiRead] = None
+    unidades_prestadas: int = 0
+    unidades_disponibles: int = 0
 
 
 # Schema for lista simple (usado en búsquedas)
@@ -135,6 +139,7 @@ class CartaSimple(BaseModel):
     tipo_carta: TipoCartaEnum
     estado_republica: Optional[str]
     disponibilidad: DisponibilidadEnum
+    unidades_total: int
 
     model_config = ConfigDict(from_attributes=True)
 

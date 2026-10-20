@@ -1,7 +1,7 @@
 """
 Carta model - represents physical maps in the mapoteca
 """
-from sqlalchemy import Column, String, Date, Enum as SQLEnum, Numeric, Text, DateTime
+from sqlalchemy import Column, String, Date, Enum as SQLEnum, Numeric, Text, DateTime, Integer
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 import uuid
@@ -92,6 +92,9 @@ class Carta(Base):
         default=DisponibilidadEnum.FISICA,
         index=True
     )
+
+    # Inventario: número total de copias físicas
+    unidades_total = Column(Integer, nullable=False, default=1, server_default="1")
     
     # INEGI references
     url_inegi = Column(Text, nullable=True, comment="URL directa al archivo en INEGI")

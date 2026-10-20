@@ -9,6 +9,7 @@ export interface Usuario {
   numero_identificacion: string | null;
   nombre_completo: string;
   email: string | null;
+  telefono: string | null;
   institucion: string | null;
   activo: boolean;
   debe_cambiar_password: boolean;
@@ -21,12 +22,14 @@ export interface UsuarioCreate {
   numero_identificacion?: string;
   nombre_completo: string;
   email?: string;
+  telefono?: string;
   institucion?: string;
 }
 
 export interface UsuarioUpdate {
   nombre_completo?: string;
   email?: string;
+  telefono?: string;
   activo?: boolean;
   institucion?: string;
 }

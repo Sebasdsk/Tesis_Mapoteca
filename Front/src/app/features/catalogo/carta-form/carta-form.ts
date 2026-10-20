@@ -47,6 +47,7 @@ export default class CartaFormComponent implements OnInit {
     fecha_edicion: '',
     estado_republica: '',
     disponibilidad: 'FISICA',
+    unidades_total: 1,
     url_inegi: '',
     notes: '',
     notas: '',
@@ -187,6 +188,7 @@ export default class CartaFormComponent implements OnInit {
           fecha_edicion: carta.fecha_edicion || '',
           estado_republica: carta.estado_republica || '',
           disponibilidad: carta.disponibilidad || 'FISICA',
+          unidades_total: carta.unidades_total ?? 1,
           url_inegi: carta.url_inegi || '',
           notas: carta.notas || '',
         };
@@ -242,6 +244,7 @@ export default class CartaFormComponent implements OnInit {
     d.nombre = this.formData.nombre;
     d.escala = this.formData.escala;
     d.tipo_carta = this.formData.tipo_carta;
+    d.unidades_total = Number(this.formData.unidades_total) || 1;
     return d;
   }
 }

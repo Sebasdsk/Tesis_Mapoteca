@@ -68,7 +68,7 @@ export const routes: Routes = [
       {
         path: 'reportes',
         loadComponent: () => import('./features/reportes/reportes'),
-        canActivate: [adminGuard],
+        canActivate: [managerGuard],
       },
 
       // Redirect vacío → catálogo

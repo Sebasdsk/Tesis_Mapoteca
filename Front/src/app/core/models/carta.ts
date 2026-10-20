@@ -70,12 +70,15 @@ export interface Carta {
   fecha_edicion: string | null;
   estado_republica: string | null;
   disponibilidad: Disponibilidad;
+  unidades_total: number;
   url_inegi: string | null;
   metadata_inegi: MetadataInegi | null;
   notas: string | null;
   created_at: string;
   updated_at: string;
   referencia_inegi?: ReferenciaInegi | null;
+  unidades_prestadas?: number;
+  unidades_disponibles?: number;
 }
 
 /**
@@ -89,4 +92,5 @@ export interface CartaSimple {
   tipo_carta: TipoCarta;
   estado_republica: string | null;
   disponibilidad: Disponibilidad;
+  unidades_total: number;
 }

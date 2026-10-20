@@ -45,6 +45,7 @@ class Usuario(Base):
     # Personal information
     nombre_completo = Column(String(255), nullable=False)
     email = Column(String(255), nullable=True)
+    telefono = Column(String(30), nullable=True)
     
     # Authentication
     password_hash = Column(String(255), nullable=True)  # NULL for EXTERNO

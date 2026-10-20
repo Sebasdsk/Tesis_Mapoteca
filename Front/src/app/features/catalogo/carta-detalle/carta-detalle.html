@@ -61,6 +61,10 @@
             <dd class="text-sm font-medium text-slate-800">{{ carta()!.escala }}</dd>
           </div>
           <div class="flex justify-between">
+            <dt class="text-sm text-slate-500">Unidades</dt>
+            <dd class="text-sm font-medium text-slate-800">{{ carta()!.unidades_disponibles ?? carta()!.unidades_total }} de {{ carta()!.unidades_total }} disponibles</dd>
+          </div>
+          <div class="flex justify-between">
             <dt class="text-sm text-slate-500">Tipo</dt>
             <dd class="text-sm font-medium text-slate-800">{{ getTipoLabel(carta()!.tipo_carta) }}</dd>
           </div>

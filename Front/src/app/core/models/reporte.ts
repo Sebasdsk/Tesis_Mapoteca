@@ -24,6 +24,19 @@ export interface PrestamoVencido {
   dias_retraso: number;
 }
 
+export interface PrestamoActivo {
+  prestamo_id: string;
+  usuario_nombre: string;
+  usuario_email: string | null;
+  usuario_telefono: string | null;
+  usuario_identificacion: string | null;
+  carta_nomenclatura: string;
+  carta_nombre: string;
+  fecha_entrega: string | null;
+  fecha_limite: string | null;
+  dias_retraso: number;
+}
+
 export interface DistribucionUsuarios {
   tipo_usuario: string;
   cantidad: number;

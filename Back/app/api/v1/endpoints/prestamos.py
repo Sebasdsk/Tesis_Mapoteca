@@ -13,7 +13,7 @@ from app.core.dependencies import get_db, get_current_admin_or_maestro, get_curr
 from app.models.usuario import Usuario
 from app.models.carta import Carta, DisponibilidadEnum
 from app.models.prestamo import Prestamo, EstadoPrestamoEnum
-from app.services.prestamos import actualizar_prestamos_vencidos
+from app.services.prestamos import actualizar_prestamos_vencidos, unidades_ocupadas
 from app.schemas.prestamo import (
     PrestamoSolicitar,
     PrestamoDirecto,
@@ -56,20 +56,11 @@ def solicitar_prestamo(
             detail="La carta no está disponible para préstamo físico"
         )
 
-    # Verificar que la carta no esté ya prestada
-    prestamo_activo = db.query(Prestamo).filter(
-        Prestamo.carta_id == data.carta_id,
-        Prestamo.estado.in_([
-            EstadoPrestamoEnum.SOLICITADO,
-            EstadoPrestamoEnum.APROBADO,
-            EstadoPrestamoEnum.ENTREGADO,
-        ])
-    ).first()
-
-    if prestamo_activo:
+    # Verificar disponibilidad por número de unidades (no por préstamo único)
+    if unidades_ocupadas(db, data.carta_id) >= carta.unidades_total:
         raise HTTPException(
             status_code=400,
-            detail="Esta carta ya tiene un préstamo activo"
+            detail="No hay unidades disponibles de esta carta"
         )
 
     # Verificar que el usuario no tenga préstamos vencidos
@@ -129,19 +120,10 @@ def registrar_prestamo_directo(
     if not usuario.activo:
         raise HTTPException(status_code=400, detail="El usuario está inactivo")
 
-    prestamo_activo = db.query(Prestamo).filter(
-        Prestamo.carta_id == data.carta_id,
-        Prestamo.estado.in_([
-            EstadoPrestamoEnum.SOLICITADO,
-            EstadoPrestamoEnum.APROBADO,
-            EstadoPrestamoEnum.ENTREGADO,
-        ])
-    ).first()
-
-    if prestamo_activo:
+    if unidades_ocupadas(db, data.carta_id) >= carta.unidades_total:
         raise HTTPException(
             status_code=400,
-            detail="Esta carta ya tiene un préstamo activo"
+            detail="No hay unidades disponibles de esta carta"
         )
 
     ahora = datetime.now(timezone.utc)
