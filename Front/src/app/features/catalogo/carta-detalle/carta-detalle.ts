@@ -8,6 +8,7 @@ import { AuthService } from '../../../core/service/auth';
 import { ToastService } from '../../../core/service/toast';
 import { UsuarioService, UsuarioLookup } from '../../../core/service/usuario';
 import { Carta } from '../../../core/models/carta';
+import { parseCoordinate } from '../../../core/utils/coordinates';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import * as L from 'leaflet';
@@ -92,54 +93,57 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
     }
   }
 
-  parseDMSToDecimal(dmsStr: string | null | undefined, isLongitude = false): number | null {
-    if (!dmsStr) return null;
-    const clean = dmsStr.trim();
-    // Regex para grados, minutos y segundos opcionales (ej: "25° 15´", "25°15'", "109° 00´")
-    const dmsRegex = /(\d+)\s*°\s*(\d+)\s*[´']?\s*(\d+)?/;
-    const match = clean.match(dmsRegex);
-    if (match) {
-      const deg = parseFloat(match[1]);
-      const min = parseFloat(match[2]) || 0;
-      const sec = parseFloat(match[3]) || 0;
-      let decimal = deg + (min / 60) + (sec / 3600);
-      if (isLongitude && decimal > 0) {
-        decimal = -decimal;
-      }
-      return decimal;
-    }
-    const num = Number(clean.replace(/,/g, ''));
-    if (!isNaN(num)) {
-      if (isLongitude && num > 0) {
-        return -num;
-      }
-      return num;
-    }
-    return null;
+  private getBounds(carta: Carta): L.LatLngBounds | null {
+    const toNumber = (valor: number | string | null | undefined): number => {
+      if (valor === null || valor === undefined || valor === '') return NaN;
+      return Number(valor);
+    };
+
+    const norte = toNumber(carta.limites_norte);
+    const sur = toNumber(carta.limites_sur);
+    const este = toNumber(carta.limites_este);
+    const oeste = toNumber(carta.limites_oeste);
+
+    if (![norte, sur, este, oeste].every((v) => Number.isFinite(v))) return null;
+
+    const latNorte = Math.max(norte, sur);
+    const latSur = Math.min(norte, sur);
+    const lngEste = Math.max(este, oeste);
+    const lngOeste = Math.min(este, oeste);
+
+    const limitesValidos =
+      latNorte > latSur &&
+      lngEste > lngOeste &&
+      latSur >= -90 &&
+      latNorte <= 90 &&
+      lngOeste >= -180 &&
+      lngEste <= 180;
+
+    if (!limitesValidos) return null;
+
+    return L.latLngBounds([latSur, lngOeste], [latNorte, lngEste]);
+  }
+
+  private escapeHtml(texto: string): string {
+    const mapa: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return texto.replace(/[&<>"']/g, (c) => mapa[c]);
   }
 
   private initMap(carta: Carta) {
     this.destroyMap();
 
-    let lat: number | null = null;
-    let lng: number | null = null;
-
-    if (carta.tipo_coordenadas === 'LIMITES' || (!carta.coordenadas_latitud && carta.limites_norte)) {
-      const norte = Number(carta.limites_norte);
-      const sur = Number(carta.limites_sur);
-      const este = Number(carta.limites_este);
-      const oeste = Number(carta.limites_oeste);
-      if (norte && sur && este && oeste) {
-        lat = (norte + sur) / 2;
-        lng = (este + oeste) / 2;
-      }
-    } else {
-      lat = this.parseDMSToDecimal(carta.coordenadas_latitud, false);
-      lng = this.parseDMSToDecimal(carta.coordenadas_longitud, true);
-    }
+    const lat = parseCoordinate(carta.coordenadas_latitud, 'lat');
+    const lng = parseCoordinate(carta.coordenadas_longitud, 'lng');
+    const bounds = this.getBounds(carta);
 
     // Si no se cuenta con coordenadas válidas, no se genera el visor
-    if (lat === null || lng === null) {
+    if (!bounds && (lat === null || lng === null)) {
       return;
     }
 
@@ -158,18 +162,38 @@ export default class CartaDetalleComponent implements OnInit, OnDestroy {
       });
       L.Marker.prototype.options.icon = iconDefault;
 
+      const centro: L.LatLngTuple = bounds
+        ? [bounds.getCenter().lat, bounds.getCenter().lng]
+        : [lat!, lng!];
+
       this.map = L.map('map-detail', {
-        center: [lat!, lng!],
-        zoom: 11,
+        center: centro,
+        zoom: 12,
       });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contribuyentes'
       }).addTo(this.map);
 
-      L.marker([lat!, lng!]).addTo(this.map)
-        .bindPopup(`<b>${carta.nombre}</b><br>${carta.nomenclatura}`)
-        .openPopup();
+      const popup = `<b>${this.escapeHtml(carta.nombre)}</b><br>${this.escapeHtml(carta.nomenclatura)}`;
+
+      // Los límites dibujan el área real de la carta (mapa preciso).
+      if (bounds) {
+        L.rectangle(bounds, {
+          color: '#0f766e',
+          weight: 2,
+          fillColor: '#0f766e',
+          fillOpacity: 0.08,
+        }).addTo(this.map).bindPopup(popup);
+        this.map.fitBounds(bounds, { padding: [20, 20] });
+      }
+
+      if (lat !== null && lng !== null) {
+        L.marker([lat, lng]).addTo(this.map).bindPopup(popup).openPopup();
+        if (!bounds) {
+          this.map.setView([lat, lng], 12);
+        }
+      }
     }, 50);
   }
 

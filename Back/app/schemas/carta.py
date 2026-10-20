@@ -9,6 +9,7 @@ from uuid import UUID
 from app.models.carta import TipoCartaEnum, DisponibilidadEnum, TipoCoordenadasEnum
 from app.models.fuente_inegi import EstadoEnlaceEnum
 from app.services.inegi import validar_url_inegi
+from app.services.coordenadas import parse_coordenada
 
 
 # Base schema with common fields
@@ -55,6 +56,23 @@ class CartaCreate(CartaBase):
             return None
         return validar_url_inegi(valor)
 
+    @field_validator('coordenadas_latitud')
+    @classmethod
+    def validar_latitud(cls, valor):
+        if valor is None or not valor.strip():
+            return None
+        if parse_coordenada(valor, es_longitud=False) is None:
+            raise ValueError('Latitud no válida. Use 25.25 o 25°15\'30"N.')
+        return valor
+
+    @field_validator('coordenadas_longitud')
+    @classmethod
+    def validar_longitud(cls, valor):
+        if valor is None or not valor.strip():
+            return None
+        if parse_coordenada(valor, es_longitud=True) is None:
+            raise ValueError('Longitud no válida. Use -109.5 o 109°00\'W.')
+        return valor
     
     @validator('nomenclatura')
     def nomenclatura_uppercase(cls, v):
@@ -104,6 +122,23 @@ class CartaUpdate(BaseModel):
             return None
         return validar_url_inegi(valor)
 
+    @field_validator('coordenadas_latitud')
+    @classmethod
+    def validar_latitud(cls, valor):
+        if valor is None or not valor.strip():
+            return None
+        if parse_coordenada(valor, es_longitud=False) is None:
+            raise ValueError('Latitud no válida. Use 25.25 o 25°15\'30"N.')
+        return valor
+
+    @field_validator('coordenadas_longitud')
+    @classmethod
+    def validar_longitud(cls, valor):
+        if valor is None or not valor.strip():
+            return None
+        if parse_coordenada(valor, es_longitud=True) is None:
+            raise ValueError('Longitud no válida. Use -109.5 o 109°00\'W.')
+        return valor
 
 
 # Schema for response (reading a carta)

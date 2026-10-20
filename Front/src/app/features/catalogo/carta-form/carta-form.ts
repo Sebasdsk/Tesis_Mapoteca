@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CartaService } from '../../../core/service/carta';
 import { ToastService } from '../../../core/service/toast';
 import { Carta } from '../../../core/models/carta';
+import { parseCoordinate } from '../../../core/utils/coordinates';
 
 @Component({
   selector: 'app-carta-form',
@@ -118,6 +119,12 @@ export default class CartaFormComponent implements OnInit {
       }
     }
 
+    if (this.latitudInvalida() || this.longitudInvalida()) {
+      this.isSaving.set(false);
+      this.errorMessage.set('Coordenadas geodésicas no válidas. Use 25.25 o 25°15\'30"N.');
+      return;
+    }
+
     // Combinar estados seleccionados
     const activeEstados = this.selectedEstados.filter(s => !!s);
     this.formData.estado_republica = activeEstados.length > 0 ? activeEstados.join(', ') : '';
@@ -214,6 +221,22 @@ export default class CartaFormComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
+  }
+
+  usaCoordenadasGeodesicas(): boolean {
+    return this.formData.tipo_coordenadas === 'GEODESICO' || this.formData.tipo_coordenadas === 'AMBAS';
+  }
+
+  latitudInvalida(): boolean {
+    if (!this.usaCoordenadasGeodesicas()) return false;
+    const valor = this.formData.coordenadas_latitud;
+    return !!valor && parseCoordinate(valor, 'lat') === null;
+  }
+
+  longitudInvalida(): boolean {
+    if (!this.usaCoordenadasGeodesicas()) return false;
+    const valor = this.formData.coordenadas_longitud;
+    return !!valor && parseCoordinate(valor, 'lng') === null;
   }
 
   private cleanFormData(): any {
